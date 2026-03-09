@@ -1,0 +1,186 @@
+﻿  Game.cpp
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:         with
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:             _Ty=int
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:         ]
+  (compiling source file 'Source/Game.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85):
+      the template instantiation context (the oldest one first) is
+          C:\Users\mikha\source\repos\Project1\Project1\Source\World.h(47,32):
+          see reference to function template instantiation 'std::shared_ptr<Animal> std::make_shared<Animal,float,int>(float &&,int &&)' being compiled
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\memory(2944,46):
+          see reference to function template instantiation 'std::_Ref_count_obj2<Animal>::_Ref_count_obj2<_Ty,int>(_Ty &&,int &&)' being compiled
+          with
+          [
+              _Ty=float
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\memory(2131,18):
+          see reference to function template instantiation 'void std::_Construct_in_place<_Ty,float,int>(_Ty &,float &&,int &&) noexcept(false)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(518,14):
+          see reference to function template instantiation '_Ty *std::construct_at<_Ty,float,int>(_Ty *const ,float &&,int &&) noexcept(<expr>)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:         with
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:             _Ty=int
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:         ]
+  (compiling source file 'Source/Game.cpp')
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:         with
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:             _Ty=int
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:         ]
+  (compiling source file 'Source/Game.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90):
+      the template instantiation context (the oldest one first) is
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\memory(2131,18):
+          see reference to function template instantiation 'void std::_Construct_in_place<_Ty,float,int>(_Ty &,float &&,int &&) noexcept(false)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(518,14):
+          see reference to function template instantiation '_Ty *std::construct_at<_Ty,float,int>(_Ty *const ,float &&,int &&) noexcept(false)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+  
+  main.cpp
+C:\Users\mikha\source\repos\Project1\Project1\Source\Renderer.h(90,26): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+  (compiling source file 'Source/main.cpp')
+  
+C:\Users\mikha\source\repos\Project1\Project1\Source\Renderer.h(201,18): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+  (compiling source file 'Source/main.cpp')
+  
+C:\Users\mikha\source\repos\Project1\Project1\Source\Renderer.h(298,45): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+  (compiling source file 'Source/main.cpp')
+  
+C:\Users\mikha\source\repos\Project1\Project1\Source\main.cpp(217,31): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:         with
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:             _Ty=int
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:         ]
+  (compiling source file 'Source/main.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85):
+      the template instantiation context (the oldest one first) is
+          C:\Users\mikha\source\repos\Project1\Project1\Source\World.h(47,32):
+          see reference to function template instantiation 'std::shared_ptr<Animal> std::make_shared<Animal,float,int>(float &&,int &&)' being compiled
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\memory(2944,46):
+          see reference to function template instantiation 'std::_Ref_count_obj2<Animal>::_Ref_count_obj2<_Ty,int>(_Ty &&,int &&)' being compiled
+          with
+          [
+              _Ty=float
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\memory(2131,18):
+          see reference to function template instantiation 'void std::_Construct_in_place<_Ty,float,int>(_Ty &,float &&,int &&) noexcept(false)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(518,14):
+          see reference to function template instantiation '_Ty *std::construct_at<_Ty,float,int>(_Ty *const ,float &&,int &&) noexcept(<expr>)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:         with
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:             _Ty=int
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:         ]
+  (compiling source file 'Source/main.cpp')
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:         with
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:             _Ty=int
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:         ]
+  (compiling source file 'Source/main.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90):
+      the template instantiation context (the oldest one first) is
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\memory(2131,18):
+          see reference to function template instantiation 'void std::_Construct_in_place<_Ty,float,int>(_Ty &,float &&,int &&) noexcept(false)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(518,14):
+          see reference to function template instantiation '_Ty *std::construct_at<_Ty,float,int>(_Ty *const ,float &&,int &&) noexcept(false)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+  
+  SaveManager.cpp
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:         with
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:             _Ty=int
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85): warning C4244:         ]
+  (compiling source file 'Source/SaveManager.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(508,85):
+      the template instantiation context (the oldest one first) is
+          C:\Users\mikha\source\repos\Project1\Project1\Source\World.h(47,32):
+          see reference to function template instantiation 'std::shared_ptr<Animal> std::make_shared<Animal,float,int>(float &&,int &&)' being compiled
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\memory(2944,46):
+          see reference to function template instantiation 'std::_Ref_count_obj2<Animal>::_Ref_count_obj2<_Ty,int>(_Ty &&,int &&)' being compiled
+          with
+          [
+              _Ty=float
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\memory(2131,18):
+          see reference to function template instantiation 'void std::_Construct_in_place<_Ty,float,int>(_Ty &,float &&,int &&) noexcept(false)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(518,14):
+          see reference to function template instantiation '_Ty *std::construct_at<_Ty,float,int>(_Ty *const ,float &&,int &&) noexcept(<expr>)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:         with
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:             _Ty=int
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(522,82): warning C4244:         ]
+  (compiling source file 'Source/SaveManager.cpp')
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:         with
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:         [
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:             _Ty=int
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90): warning C4244:         ]
+  (compiling source file 'Source/SaveManager.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(509,90):
+      the template instantiation context (the oldest one first) is
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\memory(2131,18):
+          see reference to function template instantiation 'void std::_Construct_in_place<_Ty,float,int>(_Ty &,float &&,int &&) noexcept(false)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.50.35717\include\xutility(518,14):
+          see reference to function template instantiation '_Ty *std::construct_at<_Ty,float,int>(_Ty *const ,float &&,int &&) noexcept(false)' being compiled
+          with
+          [
+              _Ty=Animal
+          ]
+  
+  Generating Code...
+  Project1.vcxproj -> C:\Users\mikha\source\repos\Project1\x64\Debug\Project1.exe
