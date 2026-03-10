@@ -8,19 +8,21 @@
 #include <string>
 #include <algorithm>
 
+
+// World class manages terrain blocks, animals and zombies
 class World {
 private:
-    std::vector<std::vector<std::string>> blockMap;
-    std::vector<std::shared_ptr<Animal>> animals;
-    std::vector<std::shared_ptr<Zombie>> zombies;
+    std::vector<std::vector<std::string>> blockMap; // 2D grid of blocks (strings represent block type)
+    std::vector<std::shared_ptr<Animal>> animals; // List of animals in world
+    std::vector<std::shared_ptr<Zombie>> zombies;  // List of zombies
 public:
-    World() {
+    World() { // Constructor
         blockMap.assign(WORLD_ROWS, std::vector<std::string>(WORLD_COLS, ""));
-        buildTerrain();
-        spawnDefaultEntities();
+        buildTerrain(); // Generate terrain
+        spawnDefaultEntities(); // Spawn animals/zombies
     }
 
-    void buildTerrain() {
+    void buildTerrain() { // Generate terrain blocks
         for (int c = 0; c < WORLD_COLS; ++c) {
             blockMap[GROUND_ROW][c] = "Grass";
             blockMap[GROUND_ROW + 1][c] = "Dirt";
@@ -50,17 +52,17 @@ public:
         zombies.push_back(std::make_shared<Zombie>(1200.f, groundSurface));
     }
 
-    std::string getBlock(int row, int col) const {
+    std::string getBlock(int row, int col) const {  // Get block at location
         if (row < 0 || row >= WORLD_ROWS || col < 0 || col >= WORLD_COLS) return "";
         return blockMap[row][col];
     }
 
-    void removeBlock(int row, int col) {
+    void removeBlock(int row, int col) { // Remove block
         if (row >= 0 && row < WORLD_ROWS && col >= 0 && col < WORLD_COLS)
             blockMap[row][col] = "";
     }
 
-    bool placeBlock(int row, int col, const std::string& type) {
+    bool placeBlock(int row, int col, const std::string& type) {  // Place block
         if (row < 0 || row >= WORLD_ROWS || col < 0 || col >= WORLD_COLS) return false;
         if (!blockMap[row][col].empty()) return false;
         blockMap[row][col] = type;
@@ -82,18 +84,18 @@ public:
     void spawnAnimal(std::shared_ptr<Animal> a) { animals.push_back(a); }
     void spawnZombie(std::shared_ptr<Zombie> z) { zombies.push_back(z); }
 
-    void removeDeadEntities() {
+    void removeDeadEntities() {  // Remove dead animals/zombies
         animals.erase(std::remove_if(animals.begin(), animals.end(),
             [](const auto& a) { return !a->isAlive(); }), animals.end());
         zombies.erase(std::remove_if(zombies.begin(), zombies.end(),
             [](const auto& z) { return !z->isAlive(); }), zombies.end());
     }
 
-    void update(float dt, Entity& player) {
+    void update(float dt, Entity& player) { // Update entities
         TileMap tm = getTileMap();
         for (auto& a : animals) a->tick(dt, tm);               // use tick() not update()
         for (auto& z : zombies) z->chaseAndAttack(player, tm, dt);
-        removeDeadEntities();
+        removeDeadEntities(); // Clean up anything killed during this frame
     }
 
     const std::vector<std::vector<std::string>>& getBlockMap()  const { return blockMap; }
@@ -102,8 +104,8 @@ public:
     const std::vector<std::shared_ptr<Animal>>& getAnimals()   const { return animals; }
     const std::vector<std::shared_ptr<Zombie>>& getZombies()   const { return zombies; }
 
-    int getTileSize()  const { return TILE_SIZE; }
-    int getGroundRow() const { return GROUND_ROW; }
-    int getCols()      const { return WORLD_COLS; }
-    int getRows()      const { return WORLD_ROWS; }
+    int getTileSize()  const { return TILE_SIZE; } // Return tile size in pixels
+    int getGroundRow() const { return GROUND_ROW; } // Return the main ground row index
+    int getCols()      const { return WORLD_COLS; } // Return total number of columns in the world
+    int getRows()      const { return WORLD_ROWS; } // Return total number of rows in the world
 };
