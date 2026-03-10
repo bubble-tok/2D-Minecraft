@@ -1,27 +1,27 @@
 #pragma once
 #include "Entity.h"
+#include "CollisionHelper.h"
+#include <cmath>
 
-class Player; // forward declaration
-
+class Player;
 
 class Monster : public Entity {
 protected:
     int   attackDamage;
     float attackRange;
-    float attackCooldown;   ///< Seconds between attacks
+    float attackCooldown;
     float attackTimer;
-
 public:
     Monster(float x, float y, int hp, int damage, float range)
         : Entity(x, y, hp),
-          attackDamage(damage), attackRange(range),
-          attackCooldown(1.5f), attackTimer(0.f) {}
+        attackDamage(damage), attackRange(range),
+        attackCooldown(1.5f), attackTimer(0.f) {
+    }
 
-    
     virtual void attack(Entity& target) {
         float dx = target.getX() - x;
         float dy = target.getY() - y;
-        float dist = std::sqrt(dx*dx + dy*dy);
+        float dist = std::sqrt(dx * dx + dy * dy);
         if (dist <= attackRange && attackTimer <= 0.f) {
             target.takeDamage(attackDamage);
             attackTimer = attackCooldown;
@@ -36,29 +36,35 @@ public:
     float getAttackRange()  const { return attackRange; }
 };
 
-
 class Zombie : public Monster {
 private:
     float moveSpeed;
-
+    float vy;
+    bool  onGround;
 public:
     Zombie(float x, float y)
-        : Monster(x, y, 50, 10, 40.f), moveSpeed(40.f) {}
-
-    
-    void update(float deltaTime) override {
-        Monster::update(deltaTime); // tick cooldown
+        : Monster(x, y, 50, 10, 40.f),
+        moveSpeed(40.f), vy(0.f), onGround(false) {
     }
 
-    
-    void chaseAndAttack(Entity& target, float deltaTime) {
+    void update(float deltaTime) override {
+        Monster::update(deltaTime);
+    }
+
+    void chaseAndAttack(Entity& target, const TileMap& map, float deltaTime) {
         if (!alive) return;
+
         float dx = target.getX() - x;
-        float dist = std::abs(dx);
-        // Move toward target
-        if (dist > 40.f)
-            x += (dx > 0 ? 1.f : -1.f) * moveSpeed * deltaTime;
-        // Try to attack
+        float vx = 0.f;
+        if (std::abs(dx) > 40.f)
+            vx = (dx > 0.f ? 1.f : -1.f) * moveSpeed;
+
+        x += vx * deltaTime;
+        vy += 900.f * deltaTime;
+        y += vy * deltaTime;
+
+        resolveTileCollision(x, y, vx, vy, onGround, map);
+
         attack(target);
     }
 };
