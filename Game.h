@@ -5,24 +5,25 @@
 #include "SaveManager.h"
 #include "CraftingSystem.h"
 
-
+// this is the Game controller class
+// This class connects all major systems together
 class Game {
 private:
-    Player         player;
-    World          world;
-    InputHandler   input;
+    Player         player; // this is the player character
+    World          world; // The game world including blocks + entities
+    InputHandler   input; // keyboard input
     CraftingSystem craftingSystem;
 
 public:
-    
+    // it will update function called every frame, and deltaTime = time between frames
     void update(float deltaTime) {
         // Movement
-        if (input.moveLeft)  player.move(-1, deltaTime);
-        if (input.moveRight) player.move(1, deltaTime);
-        if (input.jump)      player.jump();
+        if (input.moveLeft)  player.move(-1, deltaTime); // If player presses left key
+        if (input.moveRight) player.move(1, deltaTime); // If player presses right key
+        if (input.jump)      player.jump(); // Jump
 
         // Hotbar selection
-        player.getInventory().selectSlot(input.selectedSlot);
+        player.getInventory().selectSlot(input.selectedSlot); // Select inventory slot
 
         // Eating
         if (input.eat) player.eat();
@@ -33,11 +34,13 @@ public:
         // Attack nearest target (animal or zombie in range)
         if (input.attack) {
             for (auto& animal : world.getAnimals()) {
+                // If attack succeeds and animal dies
                 if (player.attack(*animal) && !animal->isAlive()) {
-                    auto meat = animal->dropMeat();
-                    player.pickUp(meat);
+                    auto meat = animal->dropMeat(); // Drop meat item
+                    player.pickUp(meat); // Player picks up dropped meat
                 }
             }
+            // Attack zombies
             for (auto& zombie : world.getZombies())
                 player.attack(*zombie);
         }
@@ -57,8 +60,8 @@ public:
         player.update(deltaTime);
     }
 
-    void saveGame() { SaveManager::save(*this); }
-    void loadGame() { SaveManager::load(*this); }
+    void saveGame() { SaveManager::save(*this); } // save game
+    void loadGame() { SaveManager::load(*this); } // load game
 
 
     Player& getPlayer() { return player; }
