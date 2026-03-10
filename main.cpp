@@ -6,62 +6,73 @@
 #include <memory>
 #include <algorithm>
 
-#include "Game.h"
-#include "Renderer.h"
-#include "CollisionHelper.h"
+#include "Game.h" // game class for controlling world and player
+#include "Renderer.h" // renderer is responsible for drawing everything
+#include "CollisionHelper.h" // for collosion logic of the payer and blocks
 
-static const int   WIN_W = 1024;
-static const int   WIN_H = 600;
-static const float MINE_TIME = 1.5f;
-static const float HUNGER_TICK = 4.f;
-static const float ATTACK_CD = 0.5f;
+static const int   WIN_W = 1024; // window width
+static const int   WIN_H = 600; // Window height
+static const float MINE_TIME = 1.5f; // Time required to mine a block (seconds)
+static const float HUNGER_TICK = 4.f; // Hunger decreases in seconds
+static const float ATTACK_CD = 0.5f; // Attack cooldown (seconds between attacks)
 
-int main() {
+int main() { // Create a SFML window with given size and title
     sf::RenderWindow window(sf::VideoMode(WIN_W, WIN_H),
         "Minecraft 2D - Stage 3", sf::Style::Titlebar | sf::Style::Close);
-    window.setFramerateLimit(60);
+    window.setFramerateLimit(60);  // Limit FPS to 60
 
-    Game     game;
+    Game     game; // Create the game world including player + world objects
     Renderer renderer(window);
 
     // Starting inventory
-    game.getPlayer().pickUp(std::make_shared<Food>(FoodItems::Apple(5)));
-    game.getPlayer().pickUp(std::make_shared<Food>(FoodItems::Bread(3)));
-    game.getPlayer().pickUp(std::make_shared<Block>(BlockItems::Wood(10)));
-    game.getPlayer().pickUp(std::make_shared<Block>(BlockItems::Stone(5)));
+    game.getPlayer().pickUp(std::make_shared<Food>(FoodItems::Apple(5))); // add 5 apples
+    game.getPlayer().pickUp(std::make_shared<Food>(FoodItems::Bread(3))); // add 3 bread
+    game.getPlayer().pickUp(std::make_shared<Block>(BlockItems::Wood(10))); // add 10 wood blocks
+    game.getPlayer().pickUp(std::make_shared<Block>(BlockItems::Stone(5))); // add 5 stone
 
     // Spawn player with feet exactly on ground surface
     game.getPlayer().setPosition(160.f, (GROUND_ROW * TILE_SIZE) - TILE_SIZE);
 
+    // event log
+    // Stores the last few game messages
     std::vector<std::string> eventLog = { "Welcome! WASD=move, Space=jump, E=eat, F=attack" };
     auto addLog = [&](const std::string& msg) {
         eventLog.push_back(msg);
+        // Keep only the last 6 messages
         if ((int)eventLog.size() > 6) eventLog.erase(eventLog.begin());
         };
-
+    
+    // MineState
     struct MineState { int row = -1, col = -1; float timer = 0.f; bool active = false; };
     MineState mine;
+    
+    // Timers for game mechanics
     float hungerTimer = 0.f;
     float sleepTimer = 0.f;
     float attackTimer = 0.f;
     float shakeTimer = 0.f;
-    float vy = 0.f;
-    float vx = 0.f;
-    bool  onGround = true;
+    
+    // Player physics velocity
+    float vy = 0.f; // vertical velocity
+    float vx = 0.f; // horizontal velocity
+    bool  onGround = true; // whether player stands on ground
 
-    sf::Clock clock;
+    sf::Clock clock; // this is a SFML clock used to calculate deltaTime
 
+    // game loop
     while (window.isOpen()) {
         float dt = std::min(clock.restart().asSeconds(), 0.05f);
         Player& player = game.getPlayer();
         World& world = game.getWorld();
-
+       
+        // handle window event
         sf::Event evt;
         while (window.pollEvent(evt)) {
+            // Close window
             if (evt.type == sf::Event::Closed) window.close();
-
+            // KEYBOARD INPUT
             if (evt.type == sf::Event::KeyPressed) {
-                // Hotbar selection
+                // Hotbar selection (1-9 keys)
                 if (evt.key.code >= sf::Keyboard::Num1 && evt.key.code <= sf::Keyboard::Num9)
                     player.getInventory().selectSlot(evt.key.code - sf::Keyboard::Num1);
 
@@ -76,6 +87,7 @@ int main() {
                     attackTimer = ATTACK_CD;
                     bool hit = false;
                     float px = player.getPositionX(), py = player.getPositionY();
+                    // Check animals
                     for (auto& a : world.getAnimals()) {
                         if (!a->isAlive()) continue;
                         if (std::hypot(a->getX() - px, a->getY() - py) < 90.f) {
@@ -88,6 +100,7 @@ int main() {
                             else addLog("[HIT] Animal HP:" + std::to_string(a->getHp()));
                         }
                     }
+                    // Check zombies
                     for (auto& z : world.getZombies()) {
                         if (!z->isAlive()) continue;
                         if (std::hypot(z->getX() - px, z->getY() - py) < 90.f) {
@@ -100,8 +113,9 @@ int main() {
                     if (!hit) addLog("[ATTACK] No target in range.");
                     world.removeDeadEntities();
                 }
-
+                // SAVE GAME
                 if (evt.key.code == sf::Keyboard::F5) { game.saveGame(); addLog("[SAVE] Saved!"); }
+                // LOAD GAME
                 if (evt.key.code == sf::Keyboard::F9) { game.loadGame(); addLog("[LOAD] Loaded!"); }
 
                 // Z = Sleep
@@ -116,7 +130,7 @@ int main() {
                     addLog("[CRAFT] Recipes: " + names[0] + ", " + names[1] + "...");
                     addLog("[CRAFT] Use craft(name) in code to craft.");
                 }
-
+                // Exit game
                 if (evt.key.code == sf::Keyboard::Escape) window.close();
             }
 
@@ -125,11 +139,12 @@ int main() {
                 float camX = std::max(0.f, player.getPositionX() - WIN_W / 2.f);
                 int col = (int)((evt.mouseButton.x + camX) / TILE_SIZE);
                 int row = evt.mouseButton.y / TILE_SIZE;
-
+                // LEFT CLICK = mine block
                 if (evt.mouseButton.button == sf::Mouse::Left) {
                     std::string blk = world.getBlock(row, col);
                     if (!blk.empty()) { mine = { row, col, 0.f, true }; addLog("[MINE] Mining " + blk + "..."); }
                 }
+                // RIGHT CLICK = place block
                 if (evt.mouseButton.button == sf::Mouse::Right) {
                     auto item = player.getInventory().getSelectedItem();
                     if (item && item->getType() == ItemType::BLOCK) {
@@ -141,6 +156,7 @@ int main() {
                     else addLog("[PLACE] Select a block first!");
                 }
             }
+            // Stop mining when mouse released
             if (evt.type == sf::Event::MouseButtonReleased &&
                 evt.mouseButton.button == sf::Mouse::Left)
                 mine.active = false;
@@ -179,13 +195,14 @@ int main() {
             if (player.getSleep().isEmpty())
                 addLog("[SLEEP] Exhausted! Movement slowed.");
         }
-
+        // Reduce timers
         if (attackTimer > 0.f) attackTimer -= dt;
         if (shakeTimer > 0.f) shakeTimer -= dt;
 
         float px = player.getPositionX();
         float py = player.getPositionY();
 
+        // player movment
         // Horizontal input
         vx = 0.f;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) ||
@@ -222,7 +239,8 @@ int main() {
         sf::Vector2f shake;
         if (shakeTimer > 0.f) shake = { (float)(rand() % 7 - 3), (float)(rand() % 5 - 2) };
         window.setView(sf::View(sf::FloatRect(shake.x, shake.y, WIN_W, WIN_H)));
-
+        
+        // render
         renderer.drawBackground();
         renderer.drawWorld(world, camX);
         renderer.drawEntities(world, camX);
