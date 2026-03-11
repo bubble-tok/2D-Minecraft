@@ -3,49 +3,123 @@
 #include <fstream>
 #include <iostream>
 
-void SaveManager::save(Game& game) { // Save the current game state
-    SaveManager s;// Create a temporary SaveManager object to store the data
-    // Copy player position from the game
+/**
+ * @brief Saves the current game state to a file.
+ *
+ * Copies relevant player data from the game, including position,
+ * health, hunger, and serialized inventory contents, then writes
+ * the data to the default save file.
+ *
+ * @param game Reference to the current game instance
+ */
+void SaveManager::save(Game& game) {
+    SaveManager s; ///< Temporary SaveManager object used to store save data
+
+    /// Copy player position from the game
     s.playerPositionX = game.getPlayer().getPositionX();
     s.playerPositionY = game.getPlayer().getPositionY();
-    // Copy player health and hunger values
+
+    /// Copy player health and hunger values
     s.health          = game.getPlayer().getHealth();
     s.hunger          = game.getPlayer().getHungerLevel();
-    // Serialize the player's inventory into a vector of strings
-    // Each string represents an item and its properties
+
+    /// Serialize the player's inventory into a vector of strings
     s.inventory       = game.getPlayer().getInventory().serialize();
-    s.saveToFile("savegame.txt");// Write the saved data to a file
-    std::cout << "[SaveManager] Game saved.\n"; // Print confirmation message in terminal
+
+    /// Write the saved data to a file
+    s.saveToFile("savegame.txt");
+
+    /// Print confirmation message
+    std::cout << "[SaveManager] Game saved.\n";
 }
 
-void SaveManager::load(Game& game) { // Load a saved game state from file
-    SaveManager s = SaveManager::loadFromFile("savegame.txt");  // Load data from file into a SaveManager object
-    game.getPlayer().setPosition(s.playerPositionX, s.playerPositionY);  // Restore player position
-    game.getPlayer().setHealth(s.health); // Restore health
-    game.getPlayer().setHunger(s.hunger);  // Restore hunger level
-    // Inventory restore: simple name/qty items only (extend for Food/Block subtypes)
+/**
+ * @brief Loads a saved game state from a file.
+ *
+ * Restores player position, health, and hunger values from the
+ * default save file. Inventory restoration is not fully implemented
+ * here and would need extension for subtype reconstruction.
+ *
+ * @param game Reference to the game instance being restored
+ */
+void SaveManager::load(Game& game) {
+    SaveManager s = SaveManager::loadFromFile("savegame.txt");  ///< Load save data from file
+
+    /// Restore player position
+    game.getPlayer().setPosition(s.playerPositionX, s.playerPositionY);
+
+    /// Restore player health
+    game.getPlayer().setHealth(s.health);
+
+    /// Restore player hunger
+    game.getPlayer().setHunger(s.hunger);
+
+    /**
+     * @note Inventory restoration currently supports only serialized
+     * item strings and would need to be extended for reconstructing
+     * Food, Block, and other item subtypes.
+     */
     std::cout << "[SaveManager] Game loaded.\n";
 }
 
-void SaveManager::saveToFile(const std::string& filename) { // Write SaveManager data to a file
-    std::ofstream file(filename); // Open file for writing
-    if (!file) { std::cerr << "[SaveManager] Cannot write to " << filename << "\n"; return; }  // If file cannot be opened
-    // Write player position, health and hunger level
+/**
+ * @brief Writes the current SaveManager data to a file.
+ *
+ * Saves player position, health, hunger, and inventory contents
+ * in plain text format.
+ *
+ * @param filename Name of the file to write save data to
+ */
+void SaveManager::saveToFile(const std::string& filename) {
+    std::ofstream file(filename); ///< Output file stream
+
+    /// Handle file open failure
+    if (!file) {
+        std::cerr << "[SaveManager] Cannot write to " << filename << "\n";
+        return;
+    }
+
+    /// Write player position, health, and hunger values
     file << playerPositionX << "\n"
          << playerPositionY << "\n"
          << health          << "\n"
          << hunger          << "\n";
-    for (auto& item : inventory) file << item << "\n";
+
+    /// Write serialized inventory items line by line
+    for (auto& item : inventory)
+        file << item << "\n";
 }
 
-SaveManager SaveManager::loadFromFile(const std::string& filename) {// Load SaveManager data from a file
-    SaveManager s;  // Create SaveManager object to store loaded data
-    std::ifstream file(filename);  // Open file for reading
-    if (!file) { std::cerr << "[SaveManager] No save file found.\n"; return s; }  // If save file does not exist, return empty or default save data
-    file >> s.playerPositionX >> s.playerPositionY >> s.health >> s.hunger; // Read player position, health, and hunger values
+/**
+ * @brief Loads save data from a file.
+ *
+ * Reads player position, health, hunger, and serialized inventory
+ * entries from the specified file.
+ *
+ * @param filename Name of the file to read save data from
+ * @return SaveManager Object containing the loaded save data
+ */
+SaveManager SaveManager::loadFromFile(const std::string& filename) {
+    SaveManager s;      ///< SaveManager object used to store loaded data
+    std::ifstream file(filename); ///< Input file stream
+
+    /// Handle missing save file
+    if (!file) {
+        std::cerr << "[SaveManager] No save file found.\n";
+        return s;
+    }
+
+    /// Read player position, health, and hunger values
+    file >> s.playerPositionX >> s.playerPositionY >> s.health >> s.hunger;
     file.ignore();
+
     std::string line;
-    while (std::getline(file, line)) // Read inventory items line-by-line
-        if (!line.empty()) s.inventory.push_back(line);
-    return s;// Return the loaded save data
+
+    /// Read inventory items line by line
+    while (std::getline(file, line))
+        if (!line.empty())
+            s.inventory.push_back(line);
+
+    /// Return the loaded save data
+    return s;
 }
