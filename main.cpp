@@ -117,6 +117,11 @@ int main() {
     float vx = 0.f;      ///< Horizontal velocity
     bool onGround = true;///< True if player is currently on the ground
 
+    /// Check if a key is held, for left and right movement.
+    bool leftHeld = false;
+    bool rightHeld = false;
+    bool jumpHeld = false;
+
     /**
      * @brief Clock used to compute frame delta time.
      */
@@ -145,6 +150,11 @@ int main() {
 
             /// Handle keyboard input
             if (evt.type == sf::Event::KeyPressed) {
+                /// Move the character when A or D is held
+                if (evt.key.code == sf::Keyboard::A) leftHeld = true;
+                if (evt.key.code == sf::Keyboard::D) rightHeld = true;
+                if (evt.key.code == sf::Keyboard::Space) jumpHeld = true;
+
                 /// Select hotbar slot using number keys 1-9
                 if (evt.key.code >= sf::Keyboard::Num1 && evt.key.code <= sf::Keyboard::Num9)
                     player.getInventory().selectSlot(evt.key.code - sf::Keyboard::Num1);
@@ -226,6 +236,13 @@ int main() {
                 if (evt.key.code == sf::Keyboard::Escape) window.close();
             }
 
+            /// Cancel movement of the player when the key is released
+            if (evt.type == sf::Event::KeyReleased) {
+                if (evt.key.code == sf::Keyboard::A) leftHeld = false;
+                if (evt.key.code == sf::Keyboard::D) rightHeld = false;
+                if (evt.key.code == sf::Keyboard::Space) jumpHeld = false;
+            }
+
             /// Handle mouse input
             if (evt.type == sf::Event::MouseButtonPressed) {
                 float camX = std::max(0.f, player.getPositionX() - WIN_W / 2.f);
@@ -303,21 +320,19 @@ int main() {
         float px = player.getPositionX();
         float py = player.getPositionY();
 
-        /// Handle horizontal movement input
+        // Left and right movement
         vx = 0.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) ||
-            sf::Keyboard::isKeyPressed(sf::Keyboard::Left))  vx = -150.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) ||
-            sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) vx = 150.f;
+        if (leftHeld)
+            vx = -150.f;
 
-        /// Apply horizontal movement and clamp within world bounds
+        if (rightHeld)
+            vx = 150.f;
+
         px += vx * dt;
         px = std::max(0.f, std::min((WORLD_COLS - 1) * (float)TILE_SIZE, px));
 
-        /// Start jump if jump key is pressed and player is grounded
-        if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Space) ||
-            sf::Keyboard::isKeyPressed(sf::Keyboard::W) ||
-            sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) && onGround) {
+        // Jump when the jump button is pressed and the player is on the ground
+        if (jumpHeld && onGround) {
             vy = -420.f;
             onGround = false;
         }
