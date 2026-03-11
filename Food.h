@@ -1,72 +1,138 @@
+/**
+ * @file Food.h
+ * @brief Defines the Food class representing consumable items that restore hunger and health.
+ */
+
 #pragma once                     
 #include "Item.h"                
 #include "Hunger.h"              
 #include "Health.h"             
 
+/**
+ * @class Food
+ * @brief Represents a consumable item that restores hunger and optionally health.
+ *
+ * Food items can be stored in an inventory and consumed by the player.
+ * When consumed, they increase hunger and optionally restore health.
+ */
 class Food : public Item {      
 private:
-    int hungerRestore;          // Amount of hunger restored when this food is consumed
-    int healthRestore;          // Amount of health restored when this food is consumed
+    int hungerRestore;   ///< Amount of hunger restored when this food is consumed
+    int healthRestore;   ///< Amount of health restored when this food is consumed
 
 public:
-    // this is a constructor for creating a Food item
-    // name = name of the food item
-    // quantity = how many items exist in inventory
-    // hungerRestore = how much hunger it restores
-    // healthRestore = optional health recovery (default is 0)
+
+    /**
+     * @brief Constructs a Food item.
+     *
+     * @param name Name of the food item
+     * @param quantity Number of items in the inventory
+     * @param hungerRestore Amount of hunger restored when consumed
+     * @param healthRestore Amount of health restored when consumed (default = 0)
+     */
     Food(const std::string& name, int quantity,
          int hungerRestore, int healthRestore = 0)
-        : Item(name, quantity, ItemType::FOOD),  
-          hungerRestore(hungerRestore),          // Initialize hunger restoration value
-          healthRestore(healthRestore) {}        // Initialize health restoration value
+        : Item(name, quantity, ItemType::FOOD),
+          hungerRestore(hungerRestore),
+          healthRestore(healthRestore) {}
 
-    // Returns how much hunger this food restores
+    /**
+     * @brief Gets the hunger restoration value.
+     * @return Amount of hunger restored by the food item
+     */
     int getHungerRestore() const { return hungerRestore; }
 
-    // Returns how much health this food restores
+    /**
+     * @brief Gets the health restoration value.
+     * @return Amount of health restored by the food item
+     */
     int getHealthRestore() const { return healthRestore; }
 
-    
-    // Consumes one unit of the food item and applies its effects
+    /**
+     * @brief Consumes one unit of the food item.
+     *
+     * Applies hunger and health restoration effects and removes
+     * one item from the inventory.
+     *
+     * @param hunger Reference to the player's Hunger system
+     * @param health Reference to the player's Health system
+     * @return True if the food was successfully consumed
+     */
     bool consume(Hunger& hunger, Health& health) {
-        if (isEmpty()) return false;          // If there are no items left, consumption fails
-        hunger.increase(hungerRestore);       // Increase the player's hunger meter
-        health.increase(healthRestore);       // Increase the player's health 
-        removeQuantity(1);                    // Remove one food item from inventory
-        return true;                          // Return true indicating successful consumption
+        if (isEmpty()) return false;
+        hunger.increase(hungerRestore);
+        health.increase(healthRestore);
+        removeQuantity(1);
+        return true;
     }
 
-    // Returns a description string for displaying the item in UI or inventory
+    /**
+     * @brief Returns a human-readable description of the food item.
+     *
+     * Used for displaying item information in the inventory UI.
+     *
+     * @return Description string containing name, quantity, and effects
+     */
     std::string getDescription() const override {
-        return name + " x" + std::to_string(quantity)          // Item name and quantity
-            + " [Hunger +" + std::to_string(hungerRestore) + "]" // Hunger restoration info
-            + (healthRestore > 0 ? " [HP +" + std::to_string(healthRestore) + "]" : ""); // Health info if applicable
+        return name + " x" + std::to_string(quantity)
+            + " [Hunger +" + std::to_string(hungerRestore) + "]"
+            + (healthRestore > 0 ? " [HP +" + std::to_string(healthRestore) + "]" : "");
     }
 
-    // Serializes the item into a string format for saving/loading game state
+    /**
+     * @brief Serializes the food item into a string format.
+     *
+     * Used for saving and loading game state.
+     *
+     * @return Serialized representation of the food item
+     */
     std::string serialize() const override {
-        return Item::serialize() + ":" +            // Base item serialization (name, quantity, type, etc.)
-               std::to_string(hungerRestore) + ":" + // Add hunger restoration value
-               std::to_string(healthRestore);        // Add health restoration value
+        return Item::serialize() + ":" +
+               std::to_string(hungerRestore) + ":" +
+               std::to_string(healthRestore);
     }
 };
 
-
-// Namespace used as a factory/helper for creating predefined food items
+/**
+ * @namespace FoodItems
+ * @brief Factory helper functions for creating predefined food items.
+ *
+ * These functions simplify the creation of commonly used food objects.
+ */
 namespace FoodItems {
 
-    // Creates an Apple food item 
+    /**
+     * @brief Creates an Apple food item.
+     * @param qty Quantity of apples
+     * @return Food object representing an apple
+     */
     inline Food Apple(int qty = 1)       { return {"Apple",       qty, 10,  0}; }
 
-    // Creates Bread 
+    /**
+     * @brief Creates a Bread food item.
+     * @param qty Quantity of bread
+     * @return Food object representing bread
+     */
     inline Food Bread(int qty = 1)       { return {"Bread",       qty, 25,  0}; }
 
-    // Creates Raw Meat
+    /**
+     * @brief Creates a RawMeat food item.
+     * @param qty Quantity of raw meat
+     * @return Food object representing raw meat
+     */
     inline Food RawMeat(int qty = 1)     { return {"RawMeat",     qty, 15,  0}; }
 
-    // Creates Cooked Meat 
+    /**
+     * @brief Creates a CookedMeat food item.
+     * @param qty Quantity of cooked meat
+     * @return Food object representing cooked meat
+     */
     inline Food CookedMeat(int qty = 1)  { return {"CookedMeat",  qty, 40,  5}; }
 
-    // Creates Golden Apple
+    /**
+     * @brief Creates a GoldenApple food item.
+     * @param qty Quantity of golden apples
+     * @return Food object representing a golden apple
+     */
     inline Food GoldenApple(int qty = 1) { return {"GoldenApple", qty, 20, 20}; }
 }
