@@ -1,58 +1,33 @@
-/**
- * @file InputHandler.h
- * @brief Handles player input states and key events.
- */
-
 #pragma once
+#include <SFML/Window/Keyboard.hpp>
 
 /**
  * @class InputHandler
- * @brief Stores and processes player input states for each frame.
+ * @brief Tracks per-frame keyboard input state for the game loop.
  *
- * This class tracks keyboard actions such as movement, attacking,
- * eating, mining, and hotbar selection. The game loop updates these
- * values each frame and resets one-shot actions after processing them.
+ * Continuous actions (moveLeft, moveRight, mineHeld) are set/cleared
+ * on key press/release. One-shot actions (jump, attack, eat, etc.) are
+ * set on press and must be cleared via resetActions() after processing.
  */
 class InputHandler {
 public:
-
-    /// True when the player is holding the move-left key
+    // Continuous state
     bool moveLeft   = false;
-
-    /// True when the player is holding the move-right key
     bool moveRight  = false;
+    bool mineHeld   = false; ///< true while LMB is held on a block
 
-    /// True when the player triggers a jump action
+    // One-shot actions (cleared each frame by resetActions)
     bool jump       = false;
-
-    /// True when the player performs an attack action
     bool attack     = false;
-
-    /// True when the player consumes food
     bool eat        = false;
-
-    /// True when the player places an item or block
     bool placeItem  = false;
-
-    /// True while the left mouse button is held on a block for mining
-    bool mineHeld   = false;
-
-    /// True when the player requests to save the game
     bool saveGame   = false;
-
-    /// True when the player requests to load the game
     bool loadGame   = false;
 
-    /// Currently selected hotbar slot (range 0–8)
-    int selectedSlot = 0;
+    // Hotbar slot selection (0–8)
+    int  selectedSlot = 0;
 
-    /**
-     * @brief Resets one-shot actions after they are processed.
-     *
-     * Continuous inputs such as movement are not reset here.
-     * This function should be called once per frame after
-     * input actions have been handled.
-     */
+    /// Reset all one-shot actions. Call once per frame after processing.
     void resetActions() {
         jump      = false;
         attack    = false;
@@ -63,47 +38,47 @@ public:
     }
 
     /**
-     * @brief Handles a key press event.
+     * @brief Update state from an SFML key-pressed event.
      *
-     * Updates the corresponding input state based on the
-     * pressed key code.
+     * Uses sf::Keyboard::Key enum values — these are stable across
+     * platforms and match what sf::Event::KeyPressed delivers.
      *
-     * @param sfmlKey Integer representing the pressed key code
-     *
-     * @note When integrating with SFML, replace these integers
-     * with `sf::Keyboard::*` values.
+     * @param key The sf::Keyboard::Key from the event
      */
-    void onKeyPressed(int sfmlKey) {
-
-        // SFML key codes (replace with sf::Keyboard::* when integrating SFML)
-        // A=0, D=3, W=22, Space=57, E=4, F=5, Q=16, S=18, F5=63, F9=67
-        switch (sfmlKey) {
-            case 0:  moveLeft  = true; break;  ///< A key
-            case 3:  moveRight = true; break;  ///< D key
-            case 57: jump      = true; break;  ///< Space key
-            case 4:  eat       = true; break;  ///< E key
-            case 5:  attack    = true; break;  ///< F key or left mouse button
-            case 16: placeItem = true; break;  ///< Q key or right mouse button
-            case 63: saveGame  = true; break;  ///< F5 key
-            case 67: loadGame  = true; break;  ///< F9 key
+    void onKeyPressed(sf::Keyboard::Key key) {
+        switch (key) {
+            case sf::Keyboard::A:     moveLeft  = true;  break;
+            case sf::Keyboard::D:     moveRight = true;  break;
+            case sf::Keyboard::Space: jump      = true;  break;
+            case sf::Keyboard::E:     eat       = true;  break;
+            case sf::Keyboard::F:     attack    = true;  break;
+            case sf::Keyboard::Q:     placeItem = true;  break;
+            case sf::Keyboard::F5:    saveGame  = true;  break;
+            case sf::Keyboard::F9:    loadGame  = true;  break;
+            // Hotbar: keys Num1–Num9
+            case sf::Keyboard::Num1:  selectedSlot = 0;  break;
+            case sf::Keyboard::Num2:  selectedSlot = 1;  break;
+            case sf::Keyboard::Num3:  selectedSlot = 2;  break;
+            case sf::Keyboard::Num4:  selectedSlot = 3;  break;
+            case sf::Keyboard::Num5:  selectedSlot = 4;  break;
+            case sf::Keyboard::Num6:  selectedSlot = 5;  break;
+            case sf::Keyboard::Num7:  selectedSlot = 6;  break;
+            case sf::Keyboard::Num8:  selectedSlot = 7;  break;
+            case sf::Keyboard::Num9:  selectedSlot = 8;  break;
+            default: break;
         }
-
-        /// Number keys 1–9 for hotbar selection
-        if (sfmlKey >= 27 && sfmlKey <= 35)
-            selectedSlot = sfmlKey - 27;
     }
 
     /**
-     * @brief Handles a key release event.
-     *
-     * Used to stop continuous movement actions when keys are released.
-     *
-     * @param sfmlKey Integer representing the released key code
+     * @brief Update state from an SFML key-released event.
+     * @param key The sf::Keyboard::Key from the event
      */
-    void onKeyReleased(int sfmlKey) {
-        switch (sfmlKey) {
-            case 0: moveLeft  = false; break;
-            case 3: moveRight = false; break;
+    void onKeyReleased(sf::Keyboard::Key key) {
+        switch (key) {
+            case sf::Keyboard::A:     moveLeft  = false; break;
+            case sf::Keyboard::D:     moveRight = false; break;
+            case sf::Keyboard::Space: jump      = false; break;
+            default: break;
         }
     }
 };
