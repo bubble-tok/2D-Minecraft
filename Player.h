@@ -127,6 +127,7 @@ public:
     void  setPosition(float nx, float ny) { x = nx; y = ny; }
     void  setHealth(int h)  { health.setHp(h); }
     void  setHunger(int h)  { hunger.setLevel(h); }
+    void  setSleep(int s)   { sleep.setLevel(s); }
     int   getHealth()       const { return health.getHp(); }
 
     void printStatus() const {
