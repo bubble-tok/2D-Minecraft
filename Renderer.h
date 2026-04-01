@@ -288,23 +288,28 @@ public:
         float winW = (float)window.getSize().x;
         float winH = (float)window.getSize().y;
 
-        sf::RectangleShape panel({ 160.f, 80.f });
+        // ── Stats panel (top-left) ────────────────────────────────────────────
+        sf::RectangleShape panel({ 160.f, 115.f });
         panel.setPosition(8, 8);
         panel.setFillColor(sf::Color(0, 0, 0, 160));
         window.draw(panel);
 
-        drawText("HP:     " + std::to_string(player.getHealth()), 14, 14, 13);
-        drawBar(14, 30, 140, 10, (float)player.getHealth(), 100.f,
+        // HP row: label at y=10, bar at y=26
+        drawText("HP:     " + std::to_string(player.getHealth()), 14, 10, 13);
+        drawBar(14, 26, 140, 8, (float)player.getHealth(), 100.f,
                 sf::Color(220, 50, 50), sf::Color(40, 40, 40));
 
+        // Hunger row: label at y=44, bar at y=60
         drawText("HUNGER: " + std::to_string(player.getHungerLevel()), 14, 44, 13);
-        drawBar(14, 46, 140, 10, (float)player.getHungerLevel(), 100.f,
+        drawBar(14, 60, 140, 8, (float)player.getHungerLevel(), 100.f,
                 sf::Color(230, 130, 30), sf::Color(40, 40, 40));
 
-        drawText("SLEEP:  " + std::to_string(player.getSleepLevel()), 14, 60, 13);
-        drawBar(14, 72, 140, 10, (float)player.getSleepLevel(), 100.f,
+        // Sleep row: label at y=78, bar at y=94
+        drawText("SLEEP:  " + std::to_string(player.getSleepLevel()), 14, 78, 13);
+        drawBar(14, 94, 140, 8, (float)player.getSleepLevel(), 100.f,
                 sf::Color(100, 160, 230), sf::Color(40, 40, 40));
 
+        // ── Hotbar (bottom-center) ────────────────────────────────────────────
         const int SLOTS = 9;
         const int SZ    = 44;
         float hotbarX = (winW - SLOTS * (SZ + 2)) / 2.f;
@@ -339,6 +344,7 @@ public:
             drawText(std::to_string(i + 1), sx + 2, hotbarY + 2, 9, sf::Color(150, 150, 150));
         }
 
+        // ── Action hints (bottom-right) ───────────────────────────────────────
         sf::RectangleShape hints({ 220.f, 80.f });
         hints.setPosition(winW - 228, winH - 90);
         hints.setFillColor(sf::Color(0, 0, 0, 150));
@@ -350,6 +356,7 @@ public:
         drawText("[F5] Save  [F9] Load", winW - 224, winH - 44, 11);
         drawText("[1-9] Hotbar slot", winW - 224, winH - 30, 11);
 
+        // ── Event log (top-right) ─────────────────────────────────────────────
         sf::RectangleShape logPanel({ 260.f, (float)(log.size() * 16 + 12) });
         logPanel.setPosition(winW - 268, 8);
         logPanel.setFillColor(sf::Color(0, 0, 0, 150));
