@@ -27,7 +27,6 @@ private:
 
     /**
      * @brief Returns the base display color for a block type.
-     *
      * @param type Name of the block type
      * @return Color associated with the block
      */
@@ -37,6 +36,7 @@ private:
         if (type == "Stone")  return sf::Color(120, 120, 120);
         if (type == "Wood")   return sf::Color(139, 105, 20);
         if (type == "Sand")   return sf::Color(212, 180, 131);
+        if (type == "Gold")   return sf::Color(255, 200, 0);
         return sf::Color(100, 100, 100);
     }
 
@@ -104,8 +104,7 @@ public:
     /**
      * @brief Constructs a Renderer and attempts to load a font.
      *
-     * The constructor tries several common system font paths across
-     * Linux, Windows, and macOS.
+     * Tries several common system font paths across Linux, Windows, and macOS.
      *
      * @param win Reference to the SFML render window
      */
@@ -121,7 +120,7 @@ public:
     }
 
     /**
-     * @brief Draws the background of the scene.
+     * @brief Draws the sky background.
      */
     void drawBackground() {
         window.clear(sf::Color(135, 206, 235));
@@ -130,10 +129,10 @@ public:
     /**
      * @brief Draws the world block map.
      *
-     * Renders visible tiles based on the camera offset.
+     * Renders only visible tiles based on the camera offset.
      *
      * @param world Reference to the world being rendered
-     * @param camX Horizontal camera offset
+     * @param camX Horizontal camera offset in pixels
      */
     void drawWorld(const World& world, float camX) {
         const auto& blocks = world.getBlockMap();
@@ -166,13 +165,12 @@ public:
     }
 
     /**
-     * @brief Draws all living world entities.
+     * @brief Draws all living world entities (animals and zombies).
      *
-     * Includes animals and zombies, along with their health bars
-     * and labels.
+     * Renders each entity's body, health bar, and label.
      *
      * @param world Reference to the world being rendered
-     * @param camX Horizontal camera offset
+     * @param camX Horizontal camera offset in pixels
      */
     void drawEntities(const World& world, float camX) {
         for (const auto& animal : world.getAnimals()) {
@@ -213,10 +211,10 @@ public:
     }
 
     /**
-     * @brief Draws the player character.
+     * @brief Draws the player character with head, body, and eyes.
      *
      * @param player Reference to the player object
-     * @param camX Horizontal camera offset
+     * @param camX Horizontal camera offset in pixels
      */
     void drawPlayer(const Player& player, float camX) {
         float sx = player.getPositionX() - camX;
@@ -252,12 +250,12 @@ public:
     }
 
     /**
-     * @brief Draws a mining progress overlay on a block.
+     * @brief Draws a darkening overlay and progress bar on a block being mined.
      *
      * @param row Row index of the block
      * @param col Column index of the block
      * @param progress Mining progress in the range [0, 1]
-     * @param camX Horizontal camera offset
+     * @param camX Horizontal camera offset in pixels
      */
     void drawMineOverlay(int row, int col, float progress, float camX) {
         float sx = col * TILE - camX;
@@ -274,14 +272,14 @@ public:
     }
 
     /**
-     * @brief Draws the game HUD.
+     * @brief Draws the full game HUD.
      *
-     * The HUD includes player stats, hotbar, action hints,
-     * and an event log.
+     * Includes the stats panel (HP, hunger, sleep), hotbar,
+     * action hints with crafting controls, and the event log.
      *
      * @param player Reference to the player
      * @param log List of recent event log messages
-     * @param selectedSlot Currently selected hotbar slot
+     * @param selectedSlot Currently selected hotbar slot index
      */
     void drawHUD(Player& player, const std::vector<std::string>& log,
                  int selectedSlot) {
@@ -294,17 +292,14 @@ public:
         panel.setFillColor(sf::Color(0, 0, 0, 160));
         window.draw(panel);
 
-        // HP row: label at y=10, bar at y=26
         drawText("HP:     " + std::to_string(player.getHealth()), 14, 10, 13);
         drawBar(14, 26, 140, 8, (float)player.getHealth(), 100.f,
                 sf::Color(220, 50, 50), sf::Color(40, 40, 40));
 
-        // Hunger row: label at y=44, bar at y=60
         drawText("HUNGER: " + std::to_string(player.getHungerLevel()), 14, 44, 13);
         drawBar(14, 60, 140, 8, (float)player.getHungerLevel(), 100.f,
                 sf::Color(230, 130, 30), sf::Color(40, 40, 40));
 
-        // Sleep row: label at y=78, bar at y=94
         drawText("SLEEP:  " + std::to_string(player.getSleepLevel()), 14, 78, 13);
         drawBar(14, 94, 140, 8, (float)player.getSleepLevel(), 100.f,
                 sf::Color(100, 160, 230), sf::Color(40, 40, 40));
@@ -328,16 +323,20 @@ public:
 
             auto item = player.getInventory().getSlot(i);
             if (item) {
+                // Gold items get a yellow icon, food gets red, everything else is brown
+                sf::Color iconColor = sf::Color(120, 90, 40);
+                if (item->getType() == ItemType::FOOD)  iconColor = sf::Color(200, 80, 80);
+                if (item->getName() == "Gold")          iconColor = sf::Color(255, 200, 0);
+
                 sf::RectangleShape icon({ 26.f, 26.f });
                 icon.setPosition(sx + 9, hotbarY + 6);
-                icon.setFillColor(item->getType() == ItemType::FOOD
-                    ? sf::Color(200, 80, 80)
-                    : sf::Color(120, 90, 40));
+                icon.setFillColor(iconColor);
                 icon.setOutlineThickness(1.f);
                 icon.setOutlineColor(sf::Color(0,0,0,80));
                 window.draw(icon);
 
-                drawText(std::to_string(item->getQuantity()), sx + SZ - 14, hotbarY + SZ - 16, 11, sf::Color::Yellow);
+                drawText(std::to_string(item->getQuantity()),
+                         sx + SZ - 14, hotbarY + SZ - 16, 11, sf::Color::Yellow);
                 drawText(item->getName().substr(0, 2), sx + 11, hotbarY + 14, 11);
             }
 
@@ -345,16 +344,17 @@ public:
         }
 
         // ── Action hints (bottom-right) ───────────────────────────────────────
-        sf::RectangleShape hints({ 220.f, 80.f });
-        hints.setPosition(winW - 228, winH - 90);
+        sf::RectangleShape hints({ 240.f, 106.f });
+        hints.setPosition(winW - 248, winH - 114);
         hints.setFillColor(sf::Color(0, 0, 0, 150));
         window.draw(hints);
 
-        drawText("[A/D] Move   [Space] Jump", winW - 224, winH - 86, 11);
-        drawText("[LClick] Mine  [RClick] Place", winW - 224, winH - 72, 11);
-        drawText("[E] Eat   [F] Attack", winW - 224, winH - 58, 11);
-        drawText("[F5] Save  [F9] Load", winW - 224, winH - 44, 11);
-        drawText("[1-9] Hotbar slot", winW - 224, winH - 30, 11);
+        drawText("[A/D] Move   [Space] Jump",      winW - 244, winH - 110, 11);
+        drawText("[LClick] Mine  [RClick] Place",   winW - 244, winH - 96,  11);
+        drawText("[E] Eat   [F] Attack   [Z] Sleep",winW - 244, winH - 82,  11);
+        drawText("[F5] Save   [F9] Load",            winW - 244, winH - 68,  11);
+        drawText("[C] Craft CookedMeat",             winW - 244, winH - 54,  11);
+        drawText("[G] Craft GoldenApple -> WIN!",    winW - 244, winH - 40,  11, sf::Color(255, 215, 0));
 
         // ── Event log (top-right) ─────────────────────────────────────────────
         sf::RectangleShape logPanel({ 260.f, (float)(log.size() * 16 + 12) });
@@ -363,7 +363,8 @@ public:
         window.draw(logPanel);
 
         for (int i = 0; i < (int)log.size(); ++i) {
-            sf::Color c = (i == (int)log.size() - 1) ? sf::Color::White : sf::Color(160, 160, 160);
+            sf::Color c = (i == (int)log.size() - 1)
+                ? sf::Color::White : sf::Color(160, 160, 160);
             drawText(log[i], winW - 264, 14 + i * 16, 11, c);
         }
     }
