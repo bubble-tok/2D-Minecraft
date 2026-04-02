@@ -1,7 +1,10 @@
 /**
  * @file Monster.cpp
- * @brief Implements Monster attack logic and Zombie chase-and-attack behaviour.
- *
+ * @brief This class implements Monster chase-and-attack behaviour.
+ * 
+ * Monsters are entities that can damage the player when in range.
+ * Since they are an entity, they can be killed.
+ * Zombies are a monster that can chase the player.
  * @author Group 46
  */
 #include "Monster.h"
