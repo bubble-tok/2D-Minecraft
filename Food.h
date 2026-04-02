@@ -1,34 +1,41 @@
 /**
  * @file Food.h
- * @brief Defines the Food class representing consumable items that restore hunger and health.
+ * @brief Defines the Food item class and FoodItems factory namespace.
+ *
+ * Food items restore the player's Hunger and optionally HP when consumed.
+ * RawMeat is blocked from direct consumption; it must be cooked at a
+ * Campfire first. GoldenApple triggers the game's win condition.
+ *
+ * @author Group 46
  */
 
-#pragma once                     
-#include "Item.h"                
-#include "Hunger.h"              
-#include "Health.h"             
+#pragma once
+#include "Item.h"
+#include "Hunger.h"
+#include "Health.h"
 
 /**
  * @class Food
- * @brief Represents a consumable item that restores hunger and optionally health.
+ * @brief An Item subclass representing a consumable food item.
  *
- * Food items can be stored in an inventory and consumed by the player.
- * When consumed, they increase hunger and optionally restore health.
+ * Each Food stores how much Hunger and HP it restores on consumption.
+ * The consume() method integrates directly with Hunger and Health objects
+ * owned by the player.
+ *
+ * @author Group 46
  */
-class Food : public Item {      
+class Food : public Item {
 private:
-    int hungerRestore;   ///< Amount of hunger restored when this food is consumed
-    int healthRestore;   ///< Amount of health restored when this food is consumed
+    int hungerRestore; ///< Hunger points restored on consumption.
+    int healthRestore; ///< HP restored on consumption (0 for most foods).
 
 public:
-
     /**
      * @brief Constructs a Food item.
-     *
-     * @param name Name of the food item
-     * @param quantity Number of items in the inventory
-     * @param hungerRestore Amount of hunger restored when consumed
-     * @param healthRestore Amount of health restored when consumed (default = 0)
+     * @param name          Display name (e.g. "Apple", "CookedMeat").
+     * @param quantity      Stack size.
+     * @param hungerRestore Hunger points restored when one unit is eaten.
+     * @param healthRestore HP restored when one unit is eaten. Defaults to 0.
      */
     Food(const std::string& name, int quantity,
          int hungerRestore, int healthRestore = 0)
@@ -37,102 +44,79 @@ public:
           healthRestore(healthRestore) {}
 
     /**
-     * @brief Gets the hunger restoration value.
-     * @return Amount of hunger restored by the food item
+     * @brief Returns the hunger restore value for one unit of this food.
+     * @return Points of Hunger restored on consumption.
      */
     int getHungerRestore() const { return hungerRestore; }
 
     /**
-     * @brief Gets the health restoration value.
-     * @return Amount of health restored by the food item
+     * @brief Returns the HP restore value for one unit of this food.
+     * @return Points of Health restored on consumption (may be 0).
      */
     int getHealthRestore() const { return healthRestore; }
 
     /**
-     * @brief Consumes one unit of the food item.
+     * @brief Consumes one unit of this food, restoring Hunger and HP.
      *
-     * Applies hunger and health restoration effects and removes
-     * one item from the inventory.
+     * Reduces the stack quantity by 1. If the stack becomes empty after
+     * consumption, the caller (Inventory::eatSelected) sets the slot to nullptr.
      *
-     * @param hunger Reference to the player's Hunger system
-     * @param health Reference to the player's Health system
-     * @return True if the food was successfully consumed
+     * @param hunger Reference to the player's Hunger object to restore.
+     * @param health Reference to the player's Health object to restore.
+     * @return True if consumption succeeded; false if the stack was already empty.
      */
     bool consume(Hunger& hunger, Health& health) {
         if (isEmpty()) return false;
-        hunger.increase(hungerRestore);
-        health.increase(healthRestore);
-        removeQuantity(1);
+        hunger.increase(hungerRestore); // restore satiation
+        health.increase(healthRestore); // restore HP (0 for most foods)
+        removeQuantity(1);              // decrement stack
         return true;
     }
 
     /**
-     * @brief Returns a human-readable description of the food item.
-     *
-     * Used for displaying item information in the inventory UI.
-     *
-     * @return Description string containing name, quantity, and effects
+     * @brief Returns a description including hunger and HP restore values.
+     * @return Formatted string for console or UI display.
      */
     std::string getDescription() const override {
         return name + " x" + std::to_string(quantity)
             + " [Hunger +" + std::to_string(hungerRestore) + "]"
-            + (healthRestore > 0 ? " [HP +" + std::to_string(healthRestore) + "]" : "");
+            + (healthRestore > 0
+               ? " [HP +" + std::to_string(healthRestore) + "]" : "");
     }
 
     /**
-     * @brief Serializes the food item into a string format.
+     * @brief Serialises this food to a colon-delimited string.
      *
-     * Used for saving and loading game state.
+     * Extends the base Item serialisation with hunger and health restore
+     * values so they can be reconstructed by SaveManager::load.
+     * Format: "name:qty:typeInt:hungerRestore:healthRestore"
      *
-     * @return Serialized representation of the food item
+     * @return Serialised string for SaveManager.
      */
     std::string serialize() const override {
-        return Item::serialize() + ":" +
-               std::to_string(hungerRestore) + ":" +
-               std::to_string(healthRestore);
+        return Item::serialize() + ":"
+            + std::to_string(hungerRestore) + ":"
+            + std::to_string(healthRestore);
     }
 };
 
 /**
  * @namespace FoodItems
- * @brief Factory helper functions for creating predefined food items.
- *
- * These functions simplify the creation of commonly used food objects.
+ * @brief Factory helpers for all Food types used in the game.
  */
 namespace FoodItems {
-
-    /**
-     * @brief Creates an Apple food item.
-     * @param qty Quantity of apples
-     * @return Food object representing an apple
-     */
+    /** @brief Apple — basic hunger restore. @param qty Stack size. @return Apple Food. */
     inline Food Apple(int qty = 1)       { return {"Apple",       qty, 10,  0}; }
 
-    /**
-     * @brief Creates a Bread food item.
-     * @param qty Quantity of bread
-     * @return Food object representing bread
-     */
+    /** @brief Bread — better hunger restore. @param qty Stack size. @return Bread Food. */
     inline Food Bread(int qty = 1)       { return {"Bread",       qty, 25,  0}; }
 
-    /**
-     * @brief Creates a RawMeat food item.
-     * @param qty Quantity of raw meat
-     * @return Food object representing raw meat
-     */
+    /** @brief Raw meat — cannot be eaten directly; must be cooked. @param qty Stack size. */
     inline Food RawMeat(int qty = 1)     { return {"RawMeat",     qty, 15,  0}; }
 
-    /**
-     * @brief Creates a CookedMeat food item.
-     * @param qty Quantity of cooked meat
-     * @return Food object representing cooked meat
-     */
+    /** @brief Cooked meat — best regular food; also heals 5 HP. @param qty Stack size. */
     inline Food CookedMeat(int qty = 1)  { return {"CookedMeat",  qty, 40,  5}; }
 
-    /**
-     * @brief Creates a GoldenApple food item.
-     * @param qty Quantity of golden apples
-     * @return Food object representing a golden apple
-     */
+    /** @brief Golden Apple — win condition item; heals 20 HP and 20 Hunger. @param qty Stack size. */
     inline Food GoldenApple(int qty = 1) { return {"GoldenApple", qty, 20, 20}; }
 }
