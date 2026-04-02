@@ -1,6 +1,6 @@
 /**
  * @file Food.h
- * @brief Defines the Food item class and FoodItems factory namespace.
+ * @brief This file defines the Food item class and FoodItems factory namespace.
  *
  * Food items restore the player's Hunger and optionally HP when consumed.
  * RawMeat is blocked from direct consumption; it must be cooked at a
