@@ -1,3 +1,9 @@
+/**
+ * @file Player.h
+ * @brief Declares the Player class — the user-controlled entity.
+ *
+ * @author Group 46
+ */
 #pragma once
 #include "Entity.h"
 #include "Inventory.h"
@@ -5,135 +11,139 @@
 #include "Sleep.h"
 #include "Food.h"
 #include "Block.h"
-#include <iostream>
-#include <cmath>
+#include "Tool.h"
 
-
+/**
+ * @class Player
+ * @brief The user-controlled entity.
+ *
+ * Owns the player's Inventory, Hunger, and Sleep subsystems. Physics
+ * (velocity, onGround, coyote time) are managed entirely by Game::tickPhysics()
+ * to avoid split state. Combat and tool bonus calculations are delegated to
+ * this class so Game can remain stat-agnostic.
+ *
+ * @author Group 46
+ */
 class Player : public Entity {
-private:
-    Inventory inventory;
-    Hunger    hunger;
-    Sleep     sleep;
-
-    // Physics
-    float velocityY;
-    bool  onGround;
-    static constexpr float GRAVITY      = 800.f;
-    static constexpr float JUMP_FORCE   = -400.f;
-    static constexpr float MOVE_SPEED   = 150.f;
-    static constexpr float GROUND_Y     = 400.f; ///< Placeholder ground level
-
-    // Combat
-    int   attackDamage;
-    float attackRange;
-    float attackCooldown;
-    float attackTimer;
-
-    // Block mining
-    float mineTimer;        ///< Accumulated time holding mouse on a block
-    float mineTimeRequired; ///< Seconds needed to break a block
-
 public:
-    Player(float x = 0.f, float y = 0.f)
-        : Entity(x, y, 100),
-          velocityY(0.f), onGround(false),
-          attackDamage(10), attackRange(80.f),
-          attackCooldown(0.5f), attackTimer(0.f),
-          mineTimer(0.f), mineTimeRequired(1.5f) {}
+    /**
+     * @brief Constructs a Player at the given world position with 100 max HP.
+     * @param x Initial X position in pixels. Defaults to 0.
+     * @param y Initial Y position in pixels. Defaults to 0.
+     */
+    Player(float x = 0.f, float y = 0.f);
 
-    void update(float deltaTime) override {
-        // Cooldowns - attack cooldown is managed by main.cpp, skip here
-        // Hunger decay is also handled by main.cpp hunger timer, skip here
-    }
+    /// Physics are handled by Game::tickPhysics(); this override is a no-op.
+    void update(float) override {}
 
+    /**
+     * @brief Attacks a target entity if it is within attack range.
+     * @param target      Entity to hit.
+     * @param totalDamage Damage to deal (base + tool bonus, computed by Game).
+     * @return True if the target was within range and hit; false otherwise.
+     */
+    bool attack(Entity& target, int totalDamage);
 
-    /// Move left (-1) or right (+1). Sleep deprivation slows movement by 50%.
-    void move(int direction, float deltaTime) {
-        float speed = MOVE_SPEED * (sleep.isEmpty() ? 0.5f : 1.0f);
-        x += direction * speed * deltaTime;
-    }
+    /**
+     * @brief Adds an item to the player's inventory.
+     * @param item Shared pointer to the item to add.
+     * @return True if picked up; false if inventory is full.
+     */
+    bool pickUp(std::shared_ptr<Item> item);
 
-    /// Jump if standing on the ground.
-    void jump() {
-        if (onGround) {
-            velocityY = JUMP_FORCE;
-            onGround  = false;
-        }
-    }
+    /**
+     * @brief Eats the food item in the currently selected hotbar slot.
+     *
+     * RawMeat is blocked — it must be cooked at a Campfire first.
+     *
+     * @return True if food was consumed; false if slot is empty, non-food, or RawMeat.
+     */
+    bool eat();
 
-   
-    bool attack(Entity& target) {
-        // Cooldown is managed externally in main.cpp via attackTimer
-        float dx = target.getX() - x;
-        float dy = target.getY() - y;
-        float dist = std::sqrt(dx * dx + dy * dy);
-        if (dist > attackRange) return false;
-        target.takeDamage(attackDamage);
-        std::cout << "[Player] Hit " << (target.isAlive() ? "entity" : "entity (killed!)")
-            << " for " << attackDamage << " dmg\n";
-        return true;
-    }
+    /**
+     * @brief Returns a pointer to the Tool currently equipped (selected slot).
+     * @return Pointer to the equipped Tool, or nullptr if no tool is selected.
+     */
+    Tool*  getEquippedTool()      const;
 
-   
-    bool mineBlock(Block& block, float deltaTime) {
-        mineTimer += deltaTime;
-        if (mineTimer >= mineTimeRequired) {
-            mineTimer = 0.f;
-            block.hit(); // mark destroyed
-            std::cout << "[Player] Mined " << block.getName() << "\n";
-            return true;
-        }
-        return false;
-    }
+    /**
+     * @brief Returns total attack damage including any equipped sword bonus.
+     * @return Base damage (10) plus sword bonusDamage if a sword is equipped.
+     */
+    int    getTotalAttackDamage() const;
 
-    void resetMineTimer() { mineTimer = 0.f; }
+    /**
+     * @brief Returns the mining time multiplier from the equipped pickaxe.
+     *
+     * Values less than 1.0 mean faster mining. Returns 1.0 if no pickaxe equipped.
+     *
+     * @return Multiplier applied to Game::BASE_MINE_TIME.
+     */
+    float  getMineSpeedMult()     const;
 
-    // ── Item interaction ──────────────────────────────────────────────────────
+    /** @brief Returns a mutable reference to the player's Inventory. */
+    Inventory& getInventory();
 
-    
-    bool pickUp(std::shared_ptr<Item> item) {
-        bool ok = inventory.addItem(item);
-        if (ok) std::cout << "[Player] Picked up " << item->getName() << "\n";
-        return ok;
-    }
+    /** @brief Returns a const reference to the player's Inventory. */
+    const Inventory& getInventory() const;
 
-    
-    bool eat() {
-        bool ok = inventory.eatSelected(hunger, health);
-        if (ok) std::cout << "[Player] Ate food. Hunger: " << hunger.getLevel() << "\n";
-        return ok;
-    }
+    /** @brief Returns a mutable reference to the player's Hunger. */
+    Hunger&    getHunger();
 
-   
-    std::shared_ptr<Item> placeItem() {
-        auto item = inventory.getSelectedItem();
-        if (!item) { std::cout << "[Player] Nothing to place.\n"; return nullptr; }
-        inventory.removeItem(item->getName(), 1);
-        std::cout << "[Player] Placed " << item->getName() << "\n";
-        return item;
-    }
+    /** @brief Returns a mutable reference to the player's Sleep. */
+    Sleep&     getSleep();
 
+    /** @brief Returns the current hunger level (0–100). */
+    int   getHungerLevel() const;
 
-    Inventory& getInventory()       { return inventory; }
-    Hunger&    getHunger()          { return hunger; }
-    Sleep&     getSleep()           { return sleep; }
-    int        getHungerLevel()     const { return hunger.getLevel(); }
-    int        getSleepLevel()      const { return sleep.getLevel(); }
-    int        getHp()              const { return health.getHp(); }
+    /** @brief Returns the current sleep level (0–100). */
+    int   getSleepLevel()  const;
 
-    // For SaveManager compatibility
-    float getPositionX() const { return x; }
-    float getPositionY() const { return y; }
-    void  setPosition(float nx, float ny) { x = nx; y = ny; }
-    void  setHealth(int h)  { health.setHp(h); }
-    void  setHunger(int h)  { hunger.setLevel(h); }
-    void  setSleep(int s)   { sleep.setLevel(s); }
-    int   getHealth()       const { return health.getHp(); }
+    /** @brief Returns current HP (alias for Entity::getHp()). */
+    int   getHealth()      const;
 
-    void printStatus() const {
-        std::cout << "HP: " << health.getHp()
-                  << "  Hunger: " << hunger.getLevel()
-                  << "  Pos: (" << x << ", " << y << ")\n";
-        inventory.print();
-    }
+    /** @brief Returns current HP. */
+    int   getHp()          const;
+
+    /** @brief Returns the player's current world X position. */
+    float getPositionX()   const;
+
+    /** @brief Returns the player's current world Y position. */
+    float getPositionY()   const;
+
+    /**
+     * @brief Directly sets the player's world position (used by Game and SaveManager).
+     * @param nx New X coordinate.
+     * @param ny New Y coordinate.
+     */
+    void  setPosition(float nx, float ny);
+
+    /**
+     * @brief Directly sets HP, clamped by Health::setHp().
+     * @param h Desired HP value.
+     */
+    void  setHealth(int h);
+
+    /**
+     * @brief Directly sets the hunger level, clamped by Hunger::setLevel().
+     * @param h Desired hunger level.
+     */
+    void  setHunger(int h);
+
+    /**
+     * @brief Directly sets the sleep level, clamped by Sleep::setLevel().
+     * @param s Desired sleep level.
+     */
+    void  setSleep(int s);
+
+    /// Prints player status and inventory to stdout for debugging.
+    void printStatus() const;
+
+private:
+    Inventory inventory;          ///< The player's 36-slot item inventory.
+    Hunger    hunger;             ///< Satiation level; reaches 0 → starvation.
+    Sleep     sleep;              ///< Energy level; reaches 0 → movement penalty.
+
+    int   baseAttackDamage = 10;  ///< Unarmed attack damage before tool bonus.
+    float attackRange      = 80.f; ///< Maximum melee attack range in pixels.
 };
