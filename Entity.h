@@ -1,6 +1,12 @@
 /**
  * @file Entity.h
- * @brief Defines the base Entity class used by all world objects with position and health.
+ * @brief Defines the Entity abstract base class for all living game objects.
+ *
+ * Entity encapsulates the position, health, alive-state, and invincibility
+ * flag shared by Player, Animal, Monster, and Zombie. Concrete subclasses
+ * implement the update() pure virtual method and may override takeDamage().
+ *
+ * @author Group 46
  */
 
 #pragma once
@@ -8,104 +14,114 @@
 
 /**
  * @class Entity
- * @brief Abstract base class representing any living object in the game world.
+ * @brief Abstract base class for all living game objects.
  *
- * Entities have a world position, health system, and alive state.
- * Derived classes (such as Player, Animal, or Monster) implement
- * their own update behavior.
+ * Stores world-space position (x, y), a Health component, a boolean alive
+ * flag, and an invincible flag that blocks damage during iframe windows.
+ * All entities that move, take damage, or are simulated inherit from this.
+ *
+ * @author Group 46
  */
 class Entity {
 protected:
-    float x, y;   ///< World position of the entity (top-left coordinate)
-    Health health;///< Health system associated with the entity
-    bool alive;   ///< Indicates whether the entity is alive
+    float  x;          ///< World X position in pixels.
+    float  y;          ///< World Y position in pixels.
+    Health health;     ///< Hit-point pool for this entity.
+    bool   alive;      ///< False once health reaches zero; entity is awaiting removal.
+    bool   invincible = false; ///< When true, takeDamage() is ignored (iframe window).
 
 public:
-
     /**
-     * @brief Constructs an Entity.
-     *
-     * Initializes the entity's world position and maximum health.
-     *
-     * @param x Initial x-position in world coordinates
-     * @param y Initial y-position in world coordinates
-     * @param maxHp Maximum health of the entity (default = 100)
+     * @brief Constructs an Entity at the given world position with the given max HP.
+     * @param x     Initial world X position in pixels.
+     * @param y     Initial world Y position in pixels.
+     * @param maxHp Maximum (and initial) hit points. Defaults to 100.
      */
     Entity(float x, float y, int maxHp = 100)
         : x(x), y(y), health(maxHp), alive(true) {}
 
-    /**
-     * @brief Virtual destructor for safe polymorphic deletion.
-     */
+    /// Virtual destructor required because subclasses are managed via pointers.
     virtual ~Entity() = default;
 
     /**
-     * @brief Applies damage to the entity.
+     * @brief Applies damage to this entity unless it is currently invincible.
      *
-     * Reduces health by the specified amount. If health reaches zero,
-     * the entity is marked as no longer alive.
+     * If the resulting HP reaches zero, sets alive to false so the entity
+     * can be removed from the world on the next cleanup pass.
      *
-     * @param amount Amount of damage to apply
+     * @param amount Positive damage amount to apply.
      */
     virtual void takeDamage(int amount) {
+        if (invincible) return;        // iframe window — ignore this hit
         health.decrease(amount);
         if (health.isDead()) alive = false;
     }
 
     /**
-     * @brief Updates the entity's state each frame.
-     *
-     * This function must be implemented by derived classes to define
-     * entity-specific behavior.
-     *
-     * @param deltaTime Time elapsed since the last update
+     * @brief Per-frame update hook. Must be implemented by each concrete subclass.
+     * @param deltaTime Elapsed time since the previous frame in seconds.
      */
     virtual void update(float deltaTime) = 0;
 
-    // --- Getters / Setters ---
-
     /**
-     * @brief Gets the entity's x-position.
-     * @return Current x-coordinate
-     */
-    float getX() const { return x; }
-
-    /**
-     * @brief Gets the entity's y-position.
-     * @return Current y-coordinate
-     */
-    float getY() const { return y; }
-
-    /**
-     * @brief Sets the entity's x-position.
-     * @param nx New x-coordinate
-     */
-    void setX(float nx) { x = nx; }
-
-    /**
-     * @brief Sets the entity's y-position.
-     * @param ny New y-coordinate
-     */
-    void setY(float ny) { y = ny; }
-
-    /**
-     * @brief Checks whether the entity is alive.
-     * @return True if the entity is alive
-     */
-    bool isAlive() const { return alive; }
-
-    /**
-     * @brief Gets the current health points.
-     * @return Current HP value
-     */
-    int getHp() const { return health.getHp(); }
-
-    /**
-     * @brief Provides access to the entity's Health object.
+     * @brief Enables or disables the invincibility (iframe) window.
      *
-     * Allows direct manipulation of health (e.g., healing).
+     * While invincible is true, all calls to takeDamage() are no-ops.
+     * Used by Game to give the player a grace period after being hit.
      *
-     * @return Reference to the Health component
+     * @param v True to enable invincibility; false to disable it.
+     */
+    void setInvincible(bool v) { invincible = v; }
+
+    /**
+     * @brief Returns whether this entity is currently invincible.
+     * @return True if the entity is in an iframe window, false otherwise.
+     */
+    bool isInvincible()  const { return invincible; }
+
+    /**
+     * @brief Returns the entity's current world X position.
+     * @return X coordinate in pixels.
+     */
+    float getX()      const { return x; }
+
+    /**
+     * @brief Returns the entity's current world Y position.
+     * @return Y coordinate in pixels.
+     */
+    float getY()      const { return y; }
+
+    /**
+     * @brief Sets the entity's world X position directly.
+     * @param nx New X coordinate in pixels.
+     */
+    void  setX(float nx) { x = nx; }
+
+    /**
+     * @brief Sets the entity's world Y position directly.
+     * @param ny New Y coordinate in pixels.
+     */
+    void  setY(float ny) { y = ny; }
+
+    /**
+     * @brief Returns true if this entity has not yet been killed.
+     * @return True while alive; false once HP has reached zero.
+     */
+    bool  isAlive()   const { return alive; }
+
+    /**
+     * @brief Returns current hit points without going through Health.
+     * @return Current HP value.
+     */
+    int   getHp()     const { return health.getHp(); }
+
+    /**
+     * @brief Returns a mutable reference to the Health component.
+     *
+     * Used by Renderer to query maxHp for health-bar display without
+     * exposing individual get/set methods on Entity itself.
+     *
+     * @return Reference to the Health object.
      */
     Health& getHealth() { return health; }
 };
