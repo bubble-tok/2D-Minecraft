@@ -2,6 +2,8 @@
  * @file InputHandler.cpp
  * @brief Implements InputHandler keyboard state tracking.
  *
+ * Handles input from the player, to perform actions in game.
+ * Allow player to change hotbar slots, movement, attacking, save/load
  * @author Group 46
  */
 
