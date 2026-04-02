@@ -19,7 +19,7 @@ bool TileMap::isSolid(int r, int c) const {
 }
 
 bool TileMap::isSolidForY(int r, int c) const {
-    if (!isSolid(r, c)) return false;
+    return isSolid(r, c);
 }
 
 bool TileMap::isSolidForX(int r, int c) const {
