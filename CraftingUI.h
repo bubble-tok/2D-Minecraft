@@ -1,6 +1,6 @@
 /**
  * @file CraftingUI.h
- * @brief Declares CraftingUI — the graphical crafting panel overlay.
+ * @brief This header declares CraftingUI, the graphical crafting panel overlay.
  *
  * @author Group 46
  */
@@ -13,7 +13,7 @@
 
 /**
  * @class CraftingUI
- * @brief Renders and handles input for the in-game crafting panel.
+ * @brief This class renders and handles input for the in-game crafting panel.
  *
  * Opened and closed with the Tab key. The panel has two sub-panels:
  * - Left: scrollable recipe list with a green/red craftability indicator dot.
