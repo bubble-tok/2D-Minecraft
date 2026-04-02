@@ -1,6 +1,12 @@
 /**
  * @file Item.h
- * @brief Defines the base Item class and item type enumeration used by the inventory system.
+ * @brief Defines the Item base class and ItemType enumeration.
+ *
+ * Item is the polymorphic base for every object that can exist in the
+ * player's inventory. Subclasses (Food, Block, Tool) extend it with
+ * type-specific behaviour and serialisation.
+ *
+ * @author Group 46
  */
 
 #pragma once
@@ -8,103 +14,96 @@
 
 /**
  * @enum ItemType
- * @brief Represents the category of an item.
+ * @brief Functional category of an inventory item.
  *
- * Item types are used to determine item behavior and how
- * they interact with other systems such as inventory, crafting,
- * and gameplay mechanics.
+ * Used by Inventory to route stacking, eating, and placement logic
+ * without requiring dynamic_cast on every operation.
  */
 enum class ItemType {
-    FOOD,   ///< Consumable item that restores hunger or health
-    BLOCK,  ///< Placeable block item used in the world
-    WEAPON, ///< Item used for combat
-    TOOL,   ///< Utility item used for actions such as mining
-    MISC    ///< Miscellaneous item type
+    FOOD,   ///< Consumable that restores Hunger and/or HP.
+    BLOCK,  ///< Placeable world tile.
+    WEAPON, ///< Reserved for future weapon items.
+    TOOL,   ///< Equipment that grants stat bonuses (pickaxe, sword, bed, campfire).
+    MISC    ///< Uncategorised items (e.g. Gold ore).
 };
 
 /**
  * @class Item
- * @brief Base class representing any item in the game.
+ * @brief Abstract base class for all inventory items.
  *
- * The Item class stores common properties such as name, quantity,
- * and item type. Specialized items such as Food, Block, or Tools
- * inherit from this class and override behavior such as `use()`
- * or `getDescription()`.
+ * Stores the item's name, stack quantity, and type. Provides stacking
+ * helpers (addQuantity, removeQuantity) and a virtual serialise interface
+ * used by SaveManager when writing the player's inventory to disk.
+ *
+ * @author Group 46
  */
 class Item {
 protected:
-    std::string name; ///< Name of the item
-    int quantity;     ///< Number of items in the stack
-    ItemType type;    ///< Category of the item
+    std::string name;     ///< Human-readable item identifier (e.g. "Wood", "Apple").
+    int         quantity; ///< Number of items in this stack.
+    ItemType    type;     ///< Functional category; governs how Inventory handles it.
 
 public:
-
     /**
-     * @brief Constructs an Item.
-     *
-     * @param name Name of the item
-     * @param quantity Quantity of items in the stack
-     * @param type Type of the item
+     * @brief Constructs an Item with a given name, quantity, and type.
+     * @param name     Display name of the item.
+     * @param quantity Initial stack size.
+     * @param type     Functional category.
      */
     Item(const std::string& name, int quantity, ItemType type)
         : name(name), quantity(quantity), type(type) {}
 
-    /**
-     * @brief Virtual destructor for safe polymorphic deletion.
-     */
+    /// Virtual destructor — required because subclasses are stored as shared_ptr<Item>.
     virtual ~Item() = default;
 
     /**
-     * @brief Uses the item.
+     * @brief Optional use action for usable items.
      *
-     * This function is intended to be overridden by derived classes
-     * such as Food or Weapon to define item-specific behavior.
+     * Default implementation is a no-op. Subclasses (e.g. Food) override
+     * this to implement consumption behaviour.
      */
     virtual void use() {}
 
     /**
-     * @brief Gets the item name.
-     * @return Name of the item
+     * @brief Returns the item's display name.
+     * @return Constant reference to the name string.
      */
-    std::string getName() const { return name; }
+    std::string getName()     const { return name; }
 
     /**
-     * @brief Gets the quantity of the item stack.
-     * @return Quantity value
+     * @brief Returns the current stack quantity.
+     * @return Number of items in this stack (>= 0).
      */
-    int getQuantity() const { return quantity; }
+    int         getQuantity() const { return quantity; }
 
     /**
-     * @brief Gets the item type.
-     * @return ItemType enumeration value
+     * @brief Returns the item's functional type.
+     * @return ItemType enum value for this item.
      */
-    ItemType getType() const { return type; }
+    ItemType    getType()     const { return type; }
 
     /**
-     * @brief Checks whether the item stack is empty.
-     * @return True if quantity is zero or less
+     * @brief Returns true if the stack is empty (quantity <= 0).
+     * @return True when the item should be removed from its inventory slot.
      */
-    bool isEmpty() const { return quantity <= 0; }
+    bool        isEmpty()     const { return quantity <= 0; }
 
     /**
-     * @brief Sets the item quantity.
-     *
-     * @param q New quantity value
+     * @brief Directly sets the stack quantity.
+     * @param q New quantity (no clamping; caller is responsible).
      */
     void setQuantity(int q) { quantity = q; }
 
     /**
-     * @brief Adds items to the stack.
-     *
-     * @param q Quantity to add
+     * @brief Adds items to this stack.
+     * @param q Number of items to add.
      */
     void addQuantity(int q) { quantity += q; }
 
     /**
-     * @brief Removes items from the stack.
-     *
-     * @param q Quantity to remove
-     * @return True if removal succeeded, false if insufficient quantity
+     * @brief Removes items from this stack if sufficient quantity exists.
+     * @param q Number of items to remove.
+     * @return True if removal succeeded; false if quantity was insufficient.
      */
     bool removeQuantity(int q) {
         if (quantity < q) return false;
@@ -113,11 +112,12 @@ public:
     }
 
     /**
-     * @brief Serializes the item into a string format.
+     * @brief Serialises this item to a colon-delimited string.
      *
-     * Used for saving and loading item data.
+     * Format: "name:quantity:typeInt"
+     * Subclasses append additional fields (e.g. Food appends hungerRestore).
      *
-     * @return Serialized string containing item name, quantity, and type
+     * @return Serialised representation for use by SaveManager.
      */
     virtual std::string serialize() const {
         return name + ":" + std::to_string(quantity) + ":" +
@@ -125,11 +125,12 @@ public:
     }
 
     /**
-     * @brief Returns a human-readable description of the item.
+     * @brief Returns a human-readable description of this stack.
      *
-     * Used for displaying item information in inventory UI.
+     * Subclasses override this to include type-specific details
+     * (e.g. Food shows hunger restore value).
      *
-     * @return Description string
+     * @return Description string for UI or console display.
      */
     virtual std::string getDescription() const {
         return name + " x" + std::to_string(quantity);
