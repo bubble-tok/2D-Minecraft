@@ -1,350 +1,332 @@
+/**
+ * @file Game.h
+ * @brief Declares the Game class — the central gameplay controller.
+ *
+ * @author Group 46
+ */
 #pragma once
 #include "Player.h"
 #include "World.h"
 #include "InputHandler.h"
 #include "SaveManager.h"
 #include "CraftingSystem.h"
-#include "CollisionHelper.h"
-#include <cmath>
+#include "DayCycle.h"
+#include "Tool.h"
+#include <vector>
 #include <string>
-#include <functional>
 
 /**
  * @struct MineState
  * @brief Tracks the block currently being mined and per-hit progress.
+ *
+ * When active is true, tickMining() accumulates time in timer until it
+ * reaches the mine time threshold, then calls World::hitBlock().
+ *
+ * @author Group 46
  */
 struct MineState {
-    int   row    = -1;
-    int   col    = -1;
-    float timer  = 0.f;  ///< Time accumulated toward the next hit
-    bool  active = false;
+    int   row    = -1;  ///< Tile row of the block being mined.
+    int   col    = -1;  ///< Tile column of the block being mined.
+    float timer  = 0.f; ///< Accumulated time toward the next hit.
+    bool  active = false; ///< True while the player holds LClick on a block.
 };
 
 /**
  * @class Game
- * @brief Central game controller.
+ * @brief Central gameplay controller that owns all subsystems and emits typed events.
  *
- * Owns the Player, World, InputHandler, CraftingSystem, and all
- * gameplay state (physics, survival timers, mining). main.cpp
- * feeds raw input and calls update() each frame; it receives
- * outcome events via the eventCallback.
+ * Game owns Player, World, InputHandler, CraftingSystem, and DayCycle.
+ * Each frame, update() ticks physics, survival, mining, entity simulation,
+ * and combat in a defined order. Side-effects (player ate, block mined, died,
+ * etc.) are communicated to main.cpp through a typed Event queue that is
+ * cleared at the start of each update().
+ *
+ * The invincibility frame system prevents the player from taking damage more
+ * than once every IFRAME_DURATION seconds regardless of how many zombies
+ * are attacking simultaneously.
+ *
+ * @author Group 46
  */
 class Game {
 public:
-    /// Outcome events emitted during update() for main.cpp to act on.
+    /**
+     * @enum Event
+     * @brief Typed event codes emitted by Game and consumed by main.cpp each frame.
+     */
     enum class Event {
         None,
-        PlayerAte,
-        PlayerWon,
-        PlayerDiedStarvation,
-        PlayerDiedVoid,
-        PlayerDiedZombie,
-        AnimalKilled,
-        ZombieHit,
-        ZombieKilled,
-        NoAttackTarget,
-        BlockMineHit,
-        BlockMined,
-        BlockPlaced,
-        BlockPlaceFailed,
-        Saved,
-        Loaded,
-        SleptWell,
-        CraftedCookedMeat,
-        CraftFailCookedMeat,
-        CraftedGoldenApple,
-        CraftFailGoldenApple,
-        HungerWarning,
-        SleepWarning,
+        PlayerAte,            ///< Player successfully ate a food item.
+        PlayerAteRaw,         ///< Player tried to eat RawMeat (blocked).
+        PlayerWon,            ///< Player ate a GoldenApple — win condition met.
+        PlayerDiedStarvation, ///< Player HP reached 0 from hunger damage.
+        PlayerDiedVoid,       ///< Player fell below the world boundary.
+        PlayerDiedZombie,     ///< Player HP reached 0 from zombie damage.
+        AnimalKilled,         ///< Player killed an animal (detail = meat name).
+        AnimalHit,            ///< Player hit an animal (detail = remaining HP).
+        ZombieHit,            ///< Player hit a zombie (detail = remaining HP).
+        ZombieKilled,         ///< Player killed a zombie.
+        NoAttackTarget,       ///< F pressed but no enemy in range.
+        BlockMineHit,         ///< One mining hit registered (detail = block type).
+        BlockMined,           ///< Block fully destroyed (detail = drop description).
+        BlockPlaced,          ///< Block placed successfully (detail = block type).
+        BlockPlaceFailed,     ///< Block could not be placed at target position.
+        BlockOutOfReach,      ///< Block is too far away to mine or place.
+        InventoryFull,        ///< Item could not be picked up — inventory is full.
+        Saved,                ///< Game saved to disk.
+        Loaded,               ///< Game loaded from disk.
+        SleptWell,            ///< Player slept through the night (detail = new day count).
+        SleepNeedsBed,        ///< Z pressed but no Bed in range.
+        SleepWrongTime,       ///< Z pressed but it is not Night.
+        NewDay,               ///< Day counter incremented (detail = new day count).
+        CraftOK,              ///< Item crafted successfully (detail = item name).
+        CraftFail,            ///< Crafting failed — missing ingredients.
+        CraftNeedTable,       ///< Recipe requires a CraftingTable nearby.
+        CraftNeedCampfire,    ///< Recipe requires a Campfire nearby.
+        HungerWarning,        ///< Player is starving — HP draining (detail = current HP).
+        SleepWarning,         ///< Player is exhausted — movement slowed.
     };
 
-    /// Extra data carried with some events (e.g. item name, HP value).
+    /**
+     * @struct EventData
+     * @brief Pairs an Event code with an optional string detail.
+     */
     struct EventData {
-        Event       type   = Event::None;
-        std::string detail;   ///< Item name, block name, HP string, etc.
+        Event       type   = Event::None; ///< Event type code.
+        std::string detail;               ///< Optional context string (HP value, item name, etc.).
     };
 
-private:
-    Player         player;
-    World          world;
-    InputHandler   input;
-    CraftingSystem craftingSystem;
-
-    // ── Physics state ─────────────────────────────────────────────────────────
-    float vy       = 0.f;
-    float vx       = 0.f;
-    bool  onGround = true;
-
-    // ── Survival timers ───────────────────────────────────────────────────────
-    static constexpr float HUNGER_TICK        = 4.f;
-    static constexpr float HUNGER_TICK_MOVING = 2.f;
-    static constexpr float SLEEP_TICK         = 8.f;
-    static constexpr float SLEEP_TICK_MOVING  = 4.f;
-    float hungerTimer = 0.f;
-    float sleepTimer  = 0.f;
-
-    // ── Combat ────────────────────────────────────────────────────────────────
-    static constexpr float ATTACK_CD = 0.5f;
-    float attackTimer = 0.f;
-
-    // ── Screen shake ──────────────────────────────────────────────────────────
-    float shakeTimer = 0.f;
-
-    // ── Mining ────────────────────────────────────────────────────────────────
-    static constexpr float MINE_TIME = 1.5f; ///< Seconds per durability hit
-    MineState mine;
-
-    // ── Pending events (cleared each frame) ──────────────────────────────────
-    std::vector<EventData> pendingEvents;
-
-    void emit(Event e, const std::string& detail = "") {
-        pendingEvents.push_back({ e, detail });
-    }
-
-    // ── Internal helpers ──────────────────────────────────────────────────────
-
-    void tickPhysics(float dt) {
-        float px = player.getPositionX();
-        float py = player.getPositionY();
-
-        vx = 0.f;
-        if (input.moveLeft)  vx = -150.f;
-        if (input.moveRight) vx =  150.f;
-        if (player.getSleep().isEmpty()) vx *= 0.5f;
-
-        px += vx * dt;
-        px = std::max(0.f, std::min((WORLD_COLS - 1) * (float)TILE_SIZE, px));
-
-        if (input.jump && onGround) { vy = -420.f; onGround = false; }
-        vy += 900.f * dt;
-        py += vy * dt;
-
-        TileMap tm = world.getTileMap();
-        resolveTileCollision(px, py, vx, vy, onGround, tm);
-
-        if (py > WORLD_ROWS * TILE_SIZE)
-            emit(Event::PlayerDiedVoid);
-
-        player.setPosition(px, py);
-    }
-
-    void tickSurvival(float dt) {
-        bool isMoving = (input.moveLeft || input.moveRight);
-
-        hungerTimer += dt;
-        float hTick = isMoving ? HUNGER_TICK_MOVING : HUNGER_TICK;
-        if (hungerTimer >= hTick) {
-            hungerTimer = 0.f;
-            player.getHunger().decrease(1);
-            if (player.getHunger().isEmpty()) {
-                player.setHealth(player.getHealth() - 1);
-                emit(Event::HungerWarning,
-                     std::to_string(player.getHealth()));
-                if (player.getHealth() <= 0)
-                    emit(Event::PlayerDiedStarvation);
-            }
-        }
-
-        sleepTimer += dt;
-        float sTick = isMoving ? SLEEP_TICK_MOVING : SLEEP_TICK;
-        if (sleepTimer >= sTick) {
-            sleepTimer = 0.f;
-            player.getSleep().decrease(1);
-            if (player.getSleep().isEmpty())
-                emit(Event::SleepWarning);
-        }
-    }
-
-    void tickMining(float dt) {
-        if (!mine.active) return;
-
-        mine.timer += dt;
-        if (mine.timer >= MINE_TIME) {
-            mine.timer = 0.f;
-            std::string blk = world.getBlock(mine.row, mine.col);
-            if (!blk.empty()) {
-                bool destroyed = world.hitBlock(mine.row, mine.col);
-                if (destroyed) {
-                    if (blk == "Gold") {
-                        player.getInventory().addItem(
-                            std::make_shared<Item>("Gold", 1, ItemType::MISC));
-                        emit(Event::BlockMined, "Gold");
-                    } else {
-                        player.getInventory().addItem(
-                            std::make_shared<Block>(blk, 1));
-                        emit(Event::BlockMined, blk);
-                    }
-                    mine = {};
-                } else {
-                    emit(Event::BlockMineHit, blk);
-                }
-            } else {
-                mine = {};
-            }
-        }
-    }
-
-    void tickCombat(float dt) {
-        if (attackTimer > 0.f) attackTimer -= dt;
-        if (shakeTimer  > 0.f) shakeTimer  -= dt;
-
-        // Zombie proximity — screen shake
-        float px = player.getPositionX();
-        float py = player.getPositionY();
-        for (auto& z : world.getZombies())
-            if (std::hypot(z->getX() - px, z->getY() - py) < 42.f) {
-                shakeTimer = 0.3f;
-                break;
-            }
-
-        // Zombie death check
-        if (player.getHealth() <= 0)
-            emit(Event::PlayerDiedZombie);
-    }
-
-    void handleAttack() {
-        if (attackTimer > 0.f) return;
-        attackTimer = ATTACK_CD;
-
-        float px  = player.getPositionX();
-        float py  = player.getPositionY();
-        bool  hit = false;
-
-        for (auto& a : world.getAnimals()) {
-            if (!a->isAlive()) continue;
-            if (std::hypot(a->getX() - px, a->getY() - py) < 90.f) {
-                player.attack(*a);
-                hit = true;
-                if (!a->isAlive()) {
-                    auto meat = a->dropMeat();
-                    player.pickUp(meat);
-                    emit(Event::AnimalKilled, meat->getName());
-                } else {
-                    emit(Event::ZombieHit,
-                         std::to_string(a->getHp()));  // reusing field for animal HP
-                }
-            }
-        }
-        for (auto& z : world.getZombies()) {
-            if (!z->isAlive()) continue;
-            if (std::hypot(z->getX() - px, z->getY() - py) < 90.f) {
-                player.attack(*z);
-                hit = true;
-                if (!z->isAlive())
-                    emit(Event::ZombieKilled);
-                else
-                    emit(Event::ZombieHit, std::to_string(z->getHp()));
-            }
-        }
-        if (!hit) emit(Event::NoAttackTarget);
-        world.removeDeadEntities();
-    }
-
-    void handleEat() {
-        auto sel  = player.getInventory().getSelectedItem();
-        bool isGA = sel && sel->getName() == "GoldenApple";
-        if (player.eat()) {
-            emit(isGA ? Event::PlayerWon : Event::PlayerAte);
-        }
-    }
-
-public:
-    Game() = default;
+    /// Maximum pixel distance for block mining and placing.
+    static constexpr float REACH_DISTANCE = 120.f;
 
     /**
-     * @brief Starts mining at tile (row, col).
+     * @brief Constructs the Game, initialising all subsystems to their defaults.
+     */
+    Game();
+
+    /**
+     * @brief Advances all game systems by one frame.
      *
-     * Called by main.cpp on left-mouse-button press.
-     */
-    void startMining(int row, int col, const std::string& blockName) {
-        mine = { row, col, 0.f, true };
-        emit(Event::BlockMineHit, blockName); // "starting to mine" notification
-    }
-
-    /** @brief Cancels any in-progress mining (LMB released). */
-    void stopMining() { mine.active = false; }
-
-    /**
-     * @brief Places the selected block item at tile (row, col).
-     * Called by main.cpp on right-mouse-button press.
-     */
-    void placeBlock(int row, int col) {
-        auto item = player.getInventory().getSelectedItem();
-        if (item && item->getType() == ItemType::BLOCK) {
-            if (world.placeBlock(row, col, item->getName())) {
-                player.getInventory().removeItem(item->getName(), 1);
-                emit(Event::BlockPlaced, item->getName());
-            } else {
-                emit(Event::BlockPlaceFailed);
-            }
-        } else {
-            emit(Event::BlockPlaceFailed);
-        }
-    }
-
-    /** @brief Request a player attack (F key). Enforces cooldown internally. */
-    void requestAttack() { handleAttack(); }
-
-    /** @brief Request eat of selected item (E key). */
-    void requestEat() { handleEat(); }
-
-    /** @brief Restore sleep fully (Z key). */
-    void requestSleep() {
-        player.getSleep().sleep();
-        emit(Event::SleptWell);
-    }
-
-    /** @brief Craft CookedMeat (C key). */
-    void requestCraftCookedMeat() {
-        if (craftingSystem.craft("CookedMeat", player.getInventory()))
-            emit(Event::CraftedCookedMeat);
-        else
-            emit(Event::CraftFailCookedMeat);
-    }
-
-    /** @brief Craft GoldenApple (G key). */
-    void requestCraftGoldenApple() {
-        if (craftingSystem.craft("GoldenApple", player.getInventory()))
-            emit(Event::CraftedGoldenApple);
-        else
-            emit(Event::CraftFailGoldenApple);
-    }
-
-    /**
-     * @brief Main update — called once per frame by main.cpp.
+     * Order of operations:
+     * 1. Clear pending events from last frame.
+     * 2. Tick DayCycle; emit NewDay if day count changed.
+     * 3. tickPhysics — player movement and tile collision.
+     * 4. tickSurvival — hunger and sleep drain.
+     * 5. tickMining — per-hit progress toward block destruction.
+     * 6. Set player invincibility flag based on iframeTimer.
+     * 7. world.update() — animal/zombie AI; zombies call takeDamage() here.
+     * 8. tickCombat — start iframe window if zombie hit landed.
+     * 9. Deduplicate death events (keep only first).
      *
-     * Runs physics, survival, mining, combat, and world simulation.
-     * Populates pendingEvents with outcomes for main.cpp to consume.
-     *
-     * @param dt Delta time in seconds
+     * @param dt Delta time in seconds from the main loop clock.
      */
-    void update(float dt) {
-        pendingEvents.clear();
-
-        tickPhysics(dt);
-        tickSurvival(dt);
-        tickMining(dt);
-        tickCombat(dt);
-
-        world.update(dt, player);
-    }
+    void update(float dt);
 
     /**
-     * @brief Returns (and clears) all events emitted during the last update().
+     * @brief Starts mining the block at (row, col) if it is within reach.
+     *
+     * Sets MineState.active = true and emits BlockMineHit. Does nothing and
+     * emits BlockOutOfReach if the distance exceeds REACH_DISTANCE.
+     *
+     * @param row       Tile row of the target block.
+     * @param col       Tile column of the target block.
+     * @param blockName Type string of the block (for the event detail).
      */
-    const std::vector<EventData>& getEvents() const { return pendingEvents; }
+    void startMining(int row, int col, const std::string& blockName);
 
-    void saveGame() { SaveManager::save(*this); emit(Event::Saved); }
-    void loadGame() { SaveManager::load(*this); emit(Event::Loaded); }
+    /**
+     * @brief Cancels active mining (called on left mouse button release).
+     */
+    void stopMining();
+
+    /**
+     * @brief Places the selected inventory item at (row, col) if within reach.
+     *
+     * Only Block items and placeable Tools (Bed, Campfire) can be placed.
+     * Emits BlockPlaced on success, BlockOutOfReach or BlockPlaceFailed otherwise.
+     *
+     * @param row Tile row of the target position.
+     * @param col Tile column of the target position.
+     */
+    void placeBlock(int row, int col);
+
+    /// Triggers a melee attack — routes to handleAttack().
+    void requestAttack();
+
+    /// Eats the selected food item — routes to handleEat().
+    void requestEat();
+
+    /**
+     * @brief Attempts to sleep. Requires a Bed nearby and Night phase.
+     *
+     * On success, fully restores the sleep bar and calls DayCycle::skipToMorning().
+     */
+    void requestSleep();
+
+    /**
+     * @brief Attempts to craft the named item from the player's inventory.
+     *
+     * Checks station proximity before delegating to CraftingSystem::craft().
+     * Emits CraftOK or CraftFail (or CraftNeedTable / CraftNeedCampfire).
+     *
+     * @param itemName Recipe output name to craft.
+     */
+    void requestCraft(const std::string& itemName);
+
+    /// Saves the game to disk. Emits Event::Saved.
+    void saveGame();
+
+    /// Loads the game from disk. Emits Event::Loaded.
+    void loadGame();
 
     // ── Accessors ─────────────────────────────────────────────────────────────
-    Player&         getPlayer()   { return player; }
-    World&          getWorld()    { return world; }
-    InputHandler&   getInput()    { return input; }
-    CraftingSystem& getCrafting() { return craftingSystem; }
 
-    float getShakeTimer()  const { return shakeTimer; }
+    /** @brief Returns the event queue produced this frame. */
+    const std::vector<EventData>& getEvents() const { return pendingEvents; }
 
-    /// Mining progress accessors for the renderer overlay.
+    /** @brief Returns a mutable reference to the Player. */
+    Player&         getPlayer()           { return player; }
+
+    /** @brief Returns a mutable reference to the World. */
+    World&          getWorld()            { return world; }
+
+    /** @brief Returns a mutable reference to the InputHandler. */
+    InputHandler&   getInput()            { return input; }
+
+    /** @brief Returns a mutable reference to the CraftingSystem. */
+    CraftingSystem& getCrafting()         { return craftingSystem; }
+
+    /** @brief Returns a const reference to the DayCycle. */
+    const DayCycle& getDayCycle()  const  { return dayCycle; }
+
+    /** @brief Returns the remaining screen shake duration in seconds. */
+    float           getShakeTimer() const { return shakeTimer; }
+
+    /** @brief Returns the current mining state. */
     const MineState& getMineState() const { return mine; }
+
+    /**
+     * @brief Returns the time required for one mining hit in seconds.
+     *
+     * Calculated as BASE_MINE_TIME × player.getMineSpeedMult().
+     *
+     * @return Mining time per hit in seconds.
+     */
+    float getMineTime() const;
+
+    /**
+     * @brief Returns true if a CraftingTable block is within 120px of the player.
+     * @return True if a CraftingTable is nearby.
+     */
+    bool isNearCraftingTable() const;
+
+    /**
+     * @brief Returns true if a Campfire block is within 120px of the player.
+     * @return True if a Campfire is nearby.
+     */
+    bool isNearCampfire() const;
+
+private:
+    Player         player;         ///< The user-controlled entity.
+    World          world;          ///< Tile grid and entity simulation.
+    InputHandler   input;          ///< Keyboard state for this frame.
+    CraftingSystem craftingSystem; ///< Recipe registry and craft executor.
+    DayCycle       dayCycle;       ///< Time-of-day tracking.
+
+    // ── Physics ───────────────────────────────────────────────────────────────
+    float vy = 0.f;           ///< Player vertical velocity (pixels/s).
+    float vx = 0.f;           ///< Player horizontal velocity (pixels/s).
+    bool  onGround = true;    ///< True while player stands on a tile.
+    float coyoteTimer = 0.f;  ///< Grace window after walking off an edge.
+
+    static constexpr float COYOTE_TIME = 0.12f; ///< Coyote time window in seconds.
+    static constexpr float GRAVITY     = 900.f;  ///< Downward acceleration (px/s²).
+    static constexpr float JUMP_VY     = -420.f; ///< Initial vertical jump velocity.
+    static constexpr float MOVE_SPEED  = 150.f;  ///< Horizontal movement speed (px/s).
+
+    // ── Survival ──────────────────────────────────────────────────────────────
+    static constexpr float HUNGER_TICK        = 4.f; ///< Seconds between hunger ticks (idle).
+    static constexpr float HUNGER_TICK_MOVING = 2.f; ///< Seconds between hunger ticks (moving).
+    static constexpr float SLEEP_TICK         = 8.f; ///< Seconds between sleep ticks (idle).
+    static constexpr float SLEEP_TICK_MOVING  = 4.f; ///< Seconds between sleep ticks (moving).
+    float hungerTimer = 0.f; ///< Time accumulator for hunger drain.
+    float sleepTimer  = 0.f; ///< Time accumulator for sleep drain.
+
+    // ── Combat / Mining ───────────────────────────────────────────────────────
+    static constexpr float ATTACK_CD      = 0.5f;  ///< Player attack cooldown in seconds.
+    static constexpr float BASE_MINE_TIME = 1.5f;  ///< Base seconds per mining hit.
+    static constexpr float IFRAME_DURATION = 0.6f; ///< Invincibility window after being hit.
+
+    float attackTimer = 0.f;  ///< Remaining attack cooldown.
+    float shakeTimer  = 0.f;  ///< Remaining screen shake duration.
+    float iframeTimer = 0.f;  ///< Remaining invincibility window after a zombie hit.
+    MineState mine;            ///< State of the currently active mining action.
+
+    std::vector<EventData> pendingEvents; ///< Events emitted this frame, consumed by main.cpp.
+
+    /**
+     * @brief Appends an event to the pending queue.
+     * @param e      Event type.
+     * @param detail Optional context string.
+     */
+    void emit(Event e, const std::string& detail = "");
+
+    /**
+     * @brief Returns true if a block of the given type exists within radius pixels.
+     * @param blockType Block name to search for (e.g. "CraftingTable").
+     * @param radius    Search radius in pixels. Defaults to 120.
+     * @return True if a matching block is within range.
+     */
+    bool nearBlock(const std::string& blockType, float radius = 120.f) const;
+
+    /**
+     * @brief Handles player movement, jumping, gravity, and tile collision.
+     * @param dt Delta time in seconds.
+     */
+    void tickPhysics(float dt);
+
+    /**
+     * @brief Drains hunger and sleep each tick; applies starvation HP loss.
+     * @param dt Delta time in seconds.
+     */
+    void tickSurvival(float dt);
+
+    /**
+     * @brief Advances the mining timer and applies hits to the target block.
+     * @param dt Delta time in seconds.
+     */
+    void tickMining(float dt);
+
+    /**
+     * @brief Ticks combat timers and starts iframe windows on zombie hits.
+     * @param dt Delta time in seconds.
+     */
+    void tickCombat(float dt);
+
+    /**
+     * @brief Executes a melee attack against nearby animals and zombies.
+     *
+     * Respects the attack cooldown. Emits AnimalKilled/AnimalHit/ZombieKilled/
+     * ZombieHit or NoAttackTarget depending on what is in range.
+     */
+    void handleAttack();
+
+    /**
+     * @brief Processes the player eating the selected food item.
+     *
+     * Blocks RawMeat, captures GoldenApple detection before consumption,
+     * and emits PlayerWon or PlayerAte accordingly.
+     */
+    void handleEat();
+
+    /**
+     * @brief Resolves what item drops when a block is destroyed.
+     *
+     * If the inventory is full and the primary drop cannot fit, the block is
+     * restored in the world and InventoryFull is emitted so the player knows.
+     *
+     * @param blk  Type name of the destroyed block.
+     * @param row  Tile row (used to restore block if inventory is full).
+     * @param col  Tile column (used to restore block if inventory is full).
+     */
+    void handleBlockDrop(const std::string& blk, int row, int col);
 };
