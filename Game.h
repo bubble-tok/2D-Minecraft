@@ -1,7 +1,10 @@
 /**
  * @file Game.h
- * @brief Declares the Game class — the central gameplay controller.
+ * @brief Declares the Game class the central engine for the game.
  *
+ * This header file declares the engine for the game, where many aspects of
+ * the game is managed. Game loop, events, load/save states, physics, game
+ * mechanics, game actions are handled here.
  * @author Group 46
  */
 #pragma once
@@ -28,7 +31,7 @@ struct MineState {
     int   row    = -1;  ///< Tile row of the block being mined.
     int   col    = -1;  ///< Tile column of the block being mined.
     float timer  = 0.f; ///< Accumulated time toward the next hit.
-    bool  active = false; ///< True while the player holds LClick on a block.
+    bool  active = false; ///< True while the player holds left click on a black (currently breaking)
 };
 
 /**
