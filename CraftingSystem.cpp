@@ -8,7 +8,7 @@
 #include <iostream>
 
 CraftingSystem::CraftingSystem() {
-    // ── Hand-craftable (no station required) ─────────────────────────────────
+    // Recipes that do not require a CraftingTable
     recipes.push_back({"WoodPlank",    4, ItemType::BLOCK, 0, 0, {{"Wood",1}}});
     recipes.push_back({"Stick",        4, ItemType::MISC,  0, 0, {{"WoodPlank",2}}});
     recipes.push_back({"StoneBrick",   4, ItemType::BLOCK, 0, 0, {{"Stone",4}}});
@@ -19,7 +19,7 @@ CraftingSystem::CraftingSystem() {
                         ToolType::Campfire, 0, 1.f, false});
     recipes.push_back({"CraftingTable",1, ItemType::BLOCK, 0, 0, {{"WoodPlank",4}}});
 
-    // ── Require CraftingTable nearby ─────────────────────────────────────────
+    // Requires CraftingTable nearby
     recipes.push_back({"WoodenPickaxe",1, ItemType::TOOL, 0, 0, {{"WoodPlank",3},{"Stick",2}},
                         ToolType::Pickaxe, 0, 0.6f, true});
     recipes.push_back({"StonePickaxe", 1, ItemType::TOOL, 0, 0, {{"StoneBrick",3},{"Stick",2}},
@@ -29,7 +29,7 @@ CraftingSystem::CraftingSystem() {
     recipes.push_back({"StoneSword",   1, ItemType::TOOL, 0, 0, {{"StoneBrick",2},{"Stick",1}},
                         ToolType::Sword, 12, 1.f, true});
 
-    // ── Require Campfire nearby ───────────────────────────────────────────────
+    // Requires Campfire nearby
     recipes.push_back({"CookedMeat",   1, ItemType::FOOD, 40, 5, {{"RawMeat",1}},
                         ToolType::None, 0, 1.f, false});
 }
@@ -53,7 +53,7 @@ bool CraftingSystem::craft(const std::string& itemName, Inventory& inventory,
         return false;
     }
 
-    // Station checks
+    // Station checks (either a Campfire or CraftingTable)
     if (itemName == "CookedMeat" && !hasCampfire) {
         std::cout << "[Craft] Need a Campfire nearby.\n";
         return false;
@@ -71,7 +71,7 @@ bool CraftingSystem::craft(const std::string& itemName, Inventory& inventory,
         }
     }
 
-    // Consume all ingredients
+    // Consume all ingredients on successful crafting
     for (auto& [ingr, qty] : recipe->ingredients)
         inventory.removeItem(ingr, qty);
 
