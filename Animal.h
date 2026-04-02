@@ -1,6 +1,6 @@
 /**
  * @file Animal.h
- * @brief Declares the Animal class — a passive wandering entity.
+ * @brief This class declares the Animal class which is a passive wandering entity.
  *
  * @author Group 46
  */
