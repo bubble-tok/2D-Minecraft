@@ -1,11 +1,10 @@
 /**
  * @file Block.h
- * @brief This class defines the Block item class and BlockItems factory namespace.
+ * @brief The Block.h file defines the Block class and the BlockItems factory namespace.
  *
- * Blocks are placeable tiles that the player mines from the world and can
- * place using right-click. Each Block tracks its own durability for the
- * item representation (distinct from the world tile durability tracked by
- * World::durabilityMap).
+ * The Block.h file declares a placeable item type that the player can mine and
+ * place in the world. Each Block object stores durability for the inventory
+ * representation, which is separate from the durability stored in the world.
  *
  * @author Group 46
  */
@@ -15,27 +14,31 @@
 
 /**
  * @class Block
- * @brief An Item subclass representing a placeable world tile.
+ * @brief The Block class represents a placeable world tile as an Item subclass.
  *
- * This class stores per-item durability so that the player's inventory shows how many
- * hits the block has taken. The solid flag indicates whether the block
- * provides collision when placed in the world.
+ * The Block class stores durability information for inventory usage so the player
+ * can see how many hits the block has taken. The Block class also stores whether
+ * the block provides collision when placed in the world.
  *
  * @author Group 46
  */
 class Block : public Item {
 private:
-    int  maxDurability; ///< Hit-points when brand new.
-    int  durability;    ///< Remaining hits before the block is destroyed.
-    bool solid;         ///< Whether this block provides tile collision.
+    int  maxDurability; ///< The maxDurability variable stores the maximum hit-points of the block.
+    int  durability;    ///< The durability variable stores the remaining hit-points of the block.
+    bool solid;         ///< The solid variable indicates whether the block provides collision.
 
 public:
     /**
-     * @brief Constructs a Block item.
-     * @param name       Display name (e.g. "Wood", "Stone").
-     * @param quantity   Stack size. Defaults to 1.
-     * @param durability Starting (and maximum) durability. Defaults to 3.
-     * @param solid      True if the block should block entity movement. Defaults to true.
+     * @brief The constructor creates a Block object.
+     *
+     * The constructor initializes the name, quantity, durability, and collision
+     * behavior of the Block object.
+     *
+     * @param name The name parameter represents the display name (for example, "Wood" or "Stone").
+     * @param quantity The quantity parameter represents the stack size. The default value is 1.
+     * @param durability The durability parameter represents both the starting and maximum durability. The default value is 3.
+     * @param solid The solid parameter determines whether the block blocks entity movement. The default value is true.
      */
     Block(const std::string& name, int quantity = 1,
           int durability = 3, bool solid = true)
@@ -43,32 +46,40 @@ public:
           maxDurability(durability), durability(durability), solid(solid) {}
 
     /**
-     * @brief Returns the current remaining durability of the block
-     * @return Hits remaining before the block is destroyed.
+     * @brief The getDurability function returns the current remaining durability of the block.
+     *
+     * @return The function returns the number of hits remaining before the block is destroyed.
      */
-    int  getDurability()    const { return durability; }
+    int getDurability() const { return durability; }
 
     /**
-     * @brief Returns the maximum durability of the block
-     * @return Maximum hit-points for this block type.
+     * @brief The getMaxDurability function returns the maximum durability of the block.
+     *
+     * @return The function returns the maximum hit-points of the block.
      */
-    int  getMaxDurability() const { return maxDurability; }
+    int getMaxDurability() const { return maxDurability; }
 
     /**
-     * @brief Returns whether this block has collision.
-     * @return True if solid, false if not solid (the player can pass through them)
+     * @brief The isSolid function returns whether the block provides collision.
+     *
+     * @return The function returns true if the block is solid, and false if the player can pass through the block.
      */
-    bool isSolid()          const { return solid; }
+    bool isSolid() const { return solid; }
 
     /**
-     * @brief Returns true when durability has been reduced to zero.
-     * @return True if the block has durability 0 (has been destroyed)
+     * @brief The isDestroyed function checks whether the block has been destroyed.
+     *
+     * @return The function returns true if the durability is less than or equal to zero.
      */
-    bool isDestroyed()      const { return durability <= 0; }
+    bool isDestroyed() const { return durability <= 0; }
 
     /**
-     * @brief Applies one hit to the block, reducing durability by 1.
-     * @return True if this hit destroyed the block (durability reached 0).
+     * @brief The hit function applies damage to the block.
+     *
+     * The hit function reduces the durability of the block by 1 if durability
+     * is greater than zero.
+     *
+     * @return The function returns true if the block is destroyed after the hit.
      */
     bool hit() {
         if (durability > 0) --durability;
@@ -76,16 +87,20 @@ public:
     }
 
     /**
-     * @brief Resets durability to its maximum value.
+     * @brief The resetDurability function restores the durability of the block to its maximum value.
      *
-     * Used when a block is returned to the player's inventory after
-     * being mined so it appears fresh for re-placement.
+     * The resetDurability function is used when the block returns to the player's
+     * inventory so that the block appears unused.
      */
     void resetDurability() { durability = maxDurability; }
 
     /**
-     * @brief Returns a description including current/max durability.
-     * @return Formatted string for console or UI display.
+     * @brief The getDescription function returns a formatted description of the block.
+     *
+     * The getDescription function includes the block name, quantity, and current
+     * durability compared to maximum durability.
+     *
+     * @return The function returns a formatted string for UI or console display.
      */
     std::string getDescription() const override {
         return name + " x" + std::to_string(quantity)
@@ -96,21 +111,42 @@ public:
 
 /**
  * @namespace BlockItems
- * @brief Factory helpers for commonly used Block types.
+ * @brief The BlockItems namespace provides factory functions for commonly used Block types.
  *
- * Each function returns a pre-configured Block with the correct durability
- * for that material type, matching the values in World::blockMaxDurability.
+ * The BlockItems namespace contains helper functions that return pre-configured
+ * Block objects with correct durability values for each material type.
  */
 namespace BlockItems {
-    /** @brief Creates a Wood block item. @param qty Stack size. @return Wood Block. */
-    inline Block Wood(int qty = 1)  { return {"Wood",  qty, 5}; }
 
-    /** @brief Creates a Stone block item. @param qty Stack size. @return Stone Block. */
+    /**
+     * @brief The Wood function creates a Wood Block object.
+     *
+     * @param qty The qty parameter represents the stack size.
+     * @return The function returns a Wood Block object.
+     */
+    inline Block Wood(int qty = 1) { return {"Wood", qty, 5}; }
+
+    /**
+     * @brief The Stone function creates a Stone Block object.
+     *
+     * @param qty The qty parameter represents the stack size.
+     * @return The function returns a Stone Block object.
+     */
     inline Block Stone(int qty = 1) { return {"Stone", qty, 8}; }
 
-    /** @brief Creates a Dirt block item. @param qty Stack size. @return Dirt Block. */
-    inline Block Dirt(int qty = 1)  { return {"Dirt",  qty, 2}; }
+    /**
+     * @brief The Dirt function creates a Dirt Block object.
+     *
+     * @param qty The qty parameter represents the stack size.
+     * @return The function returns a Dirt Block object.
+     */
+    inline Block Dirt(int qty = 1) { return {"Dirt", qty, 2}; }
 
-    /** @brief Creates a Sand block item. @param qty Stack size. @return Sand Block. */
-    inline Block Sand(int qty = 1)  { return {"Sand",  qty, 2}; }
+    /**
+     * @brief The Sand function creates a Sand Block object.
+     *
+     * @param qty The qty parameter represents the stack size.
+     * @return The function returns a Sand Block object.
+     */
+    inline Block Sand(int qty = 1) { return {"Sand", qty, 2}; }
 }
