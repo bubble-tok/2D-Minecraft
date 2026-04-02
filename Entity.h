@@ -1,6 +1,6 @@
 /**
  * @file Entity.h
- * @brief Defines the Entity abstract base class for all living game objects.
+ * @brief This header file defines the Entity abstract base class for all living game objects.
  *
  * Entity encapsulates the position, health, alive-state, and invincibility
  * flag shared by Player, Animal, Monster, and Zombie. Concrete subclasses
@@ -18,7 +18,7 @@
  *
  * Stores world-space position (x, y), a Health component, a boolean alive
  * flag, and an invincible flag that blocks damage during iframe windows.
- * All entities that move, take damage, or are simulated inherit from this.
+ * All entities that move, take damage, or are simulated will inherit from this.
  *
  * @author Group 46
  */
@@ -26,7 +26,7 @@ class Entity {
 protected:
     float  x;          ///< World X position in pixels.
     float  y;          ///< World Y position in pixels.
-    Health health;     ///< Hit-point pool for this entity.
+    Health health;     ///< Current amount of hit points for this entity.
     bool   alive;      ///< False once health reaches zero; entity is awaiting removal.
     bool   invincible = false; ///< When true, takeDamage() is ignored (iframe window).
 
@@ -52,7 +52,7 @@ public:
      * @param amount Positive damage amount to apply.
      */
     virtual void takeDamage(int amount) {
-        if (invincible) return;        // iframe window — ignore this hit
+        if (invincible) return;        // the damage will be ignored if the entity is invincible.
         health.decrease(amount);
         if (health.isDead()) alive = false;
     }
@@ -110,7 +110,7 @@ public:
     bool  isAlive()   const { return alive; }
 
     /**
-     * @brief Returns current hit points without going through Health.
+     * @brief Returns current hit points of the entity
      * @return Current HP value.
      */
     int   getHp()     const { return health.getHp(); }
