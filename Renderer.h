@@ -13,23 +13,22 @@
  * @class Renderer
  * @brief Handles all visual rendering for the game.
  *
- * The Renderer class draws the background, world tiles, entities,
- * player character, mining overlays, and heads-up display (HUD).
- * It also manages font loading and helper drawing functions.
+ * All world-space draw methods (drawWorld, drawEntities, drawPlayer,
+ * drawMineOverlay) use raw world coordinates. The caller is responsible
+ * for setting an appropriate SFML view before invoking these methods so
+ * that the view transform handles camera offset for both X and Y.
+ *
+ * drawBackground() and drawHUD() must be called while a screen-space
+ * view (origin at 0,0) is active.
  */
 class Renderer {
 private:
-    sf::RenderWindow& window; ///< Reference to the SFML render window
-    sf::Font          font;   ///< Font used for on-screen text
-    bool              fontLoaded = false; ///< True if a font was successfully loaded
+    sf::RenderWindow& window;
+    sf::Font          font;
+    bool              fontLoaded = false;
 
-    static const int TILE = 40; ///< Tile size in pixels
+    static const int TILE = 40;
 
-    /**
-     * @brief Returns the base display color for a block type.
-     * @param type Name of the block type
-     * @return Color associated with the block
-     */
     sf::Color blockColor(const std::string& type) {
         if (type == "Grass")  return sf::Color(106, 127, 60);
         if (type == "Dirt")   return sf::Color(107, 76, 42);
@@ -40,30 +39,11 @@ private:
         return sf::Color(100, 100, 100);
     }
 
-    /**
-     * @brief Returns the highlight color for the top of a block.
-     *
-     * Currently only grass uses a distinct top color.
-     *
-     * @param type Name of the block type
-     * @return Highlight color for the block top
-     */
     sf::Color blockTopColor(const std::string& type) {
         if (type == "Grass") return sf::Color(74, 124, 63);
         return blockColor(type);
     }
 
-    /**
-     * @brief Draws a text string to the window.
-     *
-     * If no font is loaded, this function does nothing.
-     *
-     * @param str Text content to draw
-     * @param x X-coordinate of the text position
-     * @param y Y-coordinate of the text position
-     * @param size Character size in pixels
-     * @param color Fill color of the text
-     */
     void drawText(const std::string& str, float x, float y,
                   unsigned size = 14, sf::Color color = sf::Color::White) {
         if (!fontLoaded) return;
@@ -73,18 +53,6 @@ private:
         window.draw(text);
     }
 
-    /**
-     * @brief Draws a progress/status bar.
-     *
-     * @param x X-coordinate of the bar
-     * @param y Y-coordinate of the bar
-     * @param w Width of the bar
-     * @param h Height of the bar
-     * @param value Current value
-     * @param maxVal Maximum value
-     * @param fill Fill color of the foreground bar
-     * @param bg Background color of the bar
-     */
     void drawBar(float x, float y, float w, float h,
                  float value, float maxVal, sf::Color fill,
                  sf::Color bg = sf::Color(40, 40, 40)) {
@@ -101,13 +69,6 @@ private:
     }
 
 public:
-    /**
-     * @brief Constructs a Renderer and attempts to load a font.
-     *
-     * Tries several common system font paths across Linux, Windows, and macOS.
-     *
-     * @param win Reference to the SFML render window
-     */
     explicit Renderer(sf::RenderWindow& win) : window(win) {
         for (auto& path : {
             "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
@@ -120,33 +81,41 @@ public:
     }
 
     /**
-     * @brief Draws the sky background.
+     * @brief Clears the window with the sky colour.
+     * Call while the world-space view is active.
      */
     void drawBackground() {
         window.clear(sf::Color(135, 206, 235));
     }
 
     /**
-     * @brief Draws the world block map.
+     * @brief Draws all solid tiles in the world using world coordinates.
      *
-     * Renders only visible tiles based on the camera offset.
+     * Frustum-culls tiles that are outside the current view viewport.
+     * The SFML view (set by the caller) provides the camera transform —
+     * no manual camX subtraction is needed here.
      *
-     * @param world Reference to the world being rendered
-     * @param camX Horizontal camera offset in pixels
+     * @param world World to draw
      */
-    void drawWorld(const World& world, float camX) {
+    void drawWorld(const World& world) {
+        // Determine visible column range from the current view
+        sf::View view = window.getView();
+        float viewLeft  = view.getCenter().x - view.getSize().x / 2.f;
+        float viewRight = view.getCenter().x + view.getSize().x / 2.f;
+        int colMin = std::max(0, (int)(viewLeft  / TILE) - 1);
+        int colMax = std::min((int)world.getCols(), (int)(viewRight / TILE) + 2);
+
         const auto& blocks = world.getBlockMap();
         for (int row = 0; row < (int)blocks.size(); ++row) {
-            for (int col = 0; col < (int)blocks[row].size(); ++col) {
+            for (int col = colMin; col < colMax; ++col) {
                 const std::string& type = blocks[row][col];
                 if (type.empty()) continue;
 
-                float sx = col * TILE - camX;
-                float sy = row * TILE;
-                if (sx < -TILE || sx > window.getSize().x + TILE) continue;
+                float wx = (float)(col * TILE);
+                float wy = (float)(row * TILE);
 
                 sf::RectangleShape tile({ (float)TILE - 1, (float)TILE - 1 });
-                tile.setPosition(sx, sy);
+                tile.setPosition(wx, wy);
                 tile.setFillColor(blockColor(type));
                 tile.setOutlineThickness(1.f);
                 tile.setOutlineColor(sf::Color(0, 0, 0, 60));
@@ -154,95 +123,94 @@ public:
 
                 if (type == "Grass") {
                     sf::RectangleShape top({ (float)TILE - 1, 5.f });
-                    top.setPosition(sx, sy);
+                    top.setPosition(wx, wy);
                     top.setFillColor(blockTopColor(type));
                     window.draw(top);
                 }
 
-                drawText(type.substr(0, 2), sx + 4, sy + TILE - 16, 10, sf::Color(0,0,0,100));
+                drawText(type.substr(0, 2), wx + 4, wy + TILE - 16, 10,
+                         sf::Color(0, 0, 0, 100));
             }
         }
     }
 
     /**
-     * @brief Draws all living world entities (animals and zombies).
-     *
-     * Renders each entity's body, health bar, and label.
-     *
-     * @param world Reference to the world being rendered
-     * @param camX Horizontal camera offset in pixels
+     * @brief Draws all living entities (animals and zombies) using world coordinates.
+     * @param world World whose entities are drawn
      */
-    void drawEntities(const World& world, float camX) {
+    void drawEntities(const World& world) {
         for (const auto& animal : world.getAnimals()) {
             if (!animal->isAlive()) continue;
-            float sx = animal->getX() - camX;
+            float wx = animal->getX();
+            float wy = animal->getY();
 
             sf::RectangleShape body({ 32.f, 24.f });
-            body.setPosition(sx + 4, animal->getY() + 8);
+            body.setPosition(wx + 4, wy + 8);
             body.setFillColor(sf::Color(244, 160, 160));
             body.setOutlineThickness(1.f);
             body.setOutlineColor(sf::Color(180, 80, 80));
             window.draw(body);
 
-            drawBar(sx, animal->getY() - 8, (float)TILE, 4.f,
-                    (float)animal->getHp(), (float)animal->getHealth().getMaxHp(),
+            drawBar(wx, wy - 8, (float)TILE, 4.f,
+                    (float)animal->getHp(),
+                    (float)animal->getHealth().getMaxHp(),
                     sf::Color(220, 50, 50));
 
-            drawText("PIG", sx + 4, animal->getY() + 10, 10, sf::Color::White);
+            drawText("PIG", wx + 4, wy + 10, 10, sf::Color::White);
         }
 
         for (const auto& zombie : world.getZombies()) {
             if (!zombie->isAlive()) continue;
-            float sx = zombie->getX() - camX;
+            float wx = zombie->getX();
+            float wy = zombie->getY();
 
             sf::RectangleShape body({ 28.f, 36.f });
-            body.setPosition(sx + 6, zombie->getY() + 4);
+            body.setPosition(wx + 6, wy + 4);
             body.setFillColor(sf::Color(90, 138, 74));
             body.setOutlineThickness(1.f);
             body.setOutlineColor(sf::Color(40, 80, 30));
             window.draw(body);
 
-            drawBar(sx, zombie->getY() - 8, (float)TILE, 4.f,
-                    (float)zombie->getHp(), (float)zombie->getHealth().getMaxHp(),
+            drawBar(wx, wy - 8, (float)TILE, 4.f,
+                    (float)zombie->getHp(),
+                    (float)zombie->getHealth().getMaxHp(),
                     sf::Color(50, 220, 50));
 
-            drawText("ZMB", sx + 4, zombie->getY() + 12, 10, sf::Color::White);
+            drawText("ZMB", wx + 4, wy + 12, 10, sf::Color::White);
         }
     }
 
     /**
-     * @brief Draws the player character with head, body, and eyes.
-     *
-     * @param player Reference to the player object
-     * @param camX Horizontal camera offset in pixels
+     * @brief Draws the player character using world coordinates.
+     * @param player Player to draw
      */
-    void drawPlayer(const Player& player, float camX) {
-        float sx = player.getPositionX() - camX;
-        float sy = player.getPositionY();
+    void drawPlayer(const Player& player) {
+        float wx = player.getPositionX();
+        float wy = player.getPositionY();
 
         sf::CircleShape shadow(14.f);
-        shadow.setPosition(sx + 6, sy + 34);
+        shadow.setPosition(wx + 6, wy + 34);
         shadow.setFillColor(sf::Color(0, 0, 0, 50));
         shadow.setScale(1.f, 0.4f);
         window.draw(shadow);
 
         sf::RectangleShape body({ 28.f, 20.f });
-        body.setPosition(sx + 6, sy + 18);
+        body.setPosition(wx + 6, wy + 18);
         body.setFillColor(sf::Color(74, 144, 217));
         body.setOutlineThickness(1.f);
         body.setOutlineColor(sf::Color(44, 94, 140));
         window.draw(body);
 
         sf::RectangleShape head({ 26.f, 24.f });
-        head.setPosition(sx + 7, sy);
+        head.setPosition(wx + 7, wy);
         head.setFillColor(sf::Color(244, 200, 122));
         head.setOutlineThickness(1.f);
         head.setOutlineColor(sf::Color(200, 150, 80));
         window.draw(head);
 
         sf::RectangleShape eyeL({ 5.f, 5.f }), eyeR({ 5.f, 5.f });
-        eyeL.setPosition(sx + 11, sy + 8);
-        eyeR.setPosition(sx + 22, sy + 8);
+        eyeL.setPosition(wx + 11, wy + 8);
+        eyeR.setPosition(wx + 22, wy + 8);
         eyeL.setFillColor(sf::Color(40, 40, 80));
         eyeR.setFillColor(sf::Color(40, 40, 80));
         window.draw(eyeL);
@@ -250,35 +218,35 @@ public:
     }
 
     /**
-     * @brief Draws a darkening overlay and progress bar on a block being mined.
+     * @brief Draws a darkening overlay and progress bar on the block being mined.
      *
-     * @param row Row index of the block
-     * @param col Column index of the block
-     * @param progress Mining progress in the range [0, 1]
-     * @param camX Horizontal camera offset in pixels
+     * Uses world coordinates — caller must have the world-space view active.
+     *
+     * @param row      Tile row of the block being mined
+     * @param col      Tile column of the block being mined
+     * @param progress Overall mining progress [0, 1] across all durability hits
      */
-    void drawMineOverlay(int row, int col, float progress, float camX) {
-        float sx = col * TILE - camX;
-        float sy = row * TILE;
+    void drawMineOverlay(int row, int col, float progress) {
+        float wx = (float)(col * TILE);
+        float wy = (float)(row * TILE);
 
         sf::RectangleShape overlay({ (float)TILE, (float)TILE });
-        overlay.setPosition(sx, sy);
+        overlay.setPosition(wx, wy);
         overlay.setFillColor(sf::Color(0, 0, 0, (sf::Uint8)(180 * progress)));
         window.draw(overlay);
 
-        drawBar(sx + 4, sy + TILE - 10, TILE - 8, 6,
+        drawBar(wx + 4, wy + TILE - 10, TILE - 8, 6,
                 progress, 1.f,
                 sf::Color(255, 200, 0), sf::Color(40, 40, 40));
     }
 
     /**
-     * @brief Draws the full game HUD.
+     * @brief Draws the full game HUD in screen space.
      *
-     * Includes the stats panel (HP, hunger, sleep), hotbar,
-     * action hints with crafting controls, and the event log.
+     * Must be called while a screen-space view (origin 0,0) is active.
      *
-     * @param player Reference to the player
-     * @param log List of recent event log messages
+     * @param player       The player whose stats are displayed
+     * @param log          Recent event log messages
      * @param selectedSlot Currently selected hotbar slot index
      */
     void drawHUD(Player& player, const std::vector<std::string>& log,
@@ -312,7 +280,7 @@ public:
 
         for (int i = 0; i < SLOTS; ++i) {
             float sx = hotbarX + i * (SZ + 2);
-            bool sel = (i == selectedSlot);
+            bool  sel = (i == selectedSlot);
 
             sf::RectangleShape slot({ (float)SZ, (float)SZ });
             slot.setPosition(sx, hotbarY);
@@ -323,16 +291,16 @@ public:
 
             auto item = player.getInventory().getSlot(i);
             if (item) {
-                // Gold items get a yellow icon, food gets red, everything else is brown
                 sf::Color iconColor = sf::Color(120, 90, 40);
                 if (item->getType() == ItemType::FOOD)  iconColor = sf::Color(200, 80, 80);
                 if (item->getName() == "Gold")          iconColor = sf::Color(255, 200, 0);
+                if (item->getName() == "GoldenApple")   iconColor = sf::Color(255, 215, 0);
 
                 sf::RectangleShape icon({ 26.f, 26.f });
                 icon.setPosition(sx + 9, hotbarY + 6);
                 icon.setFillColor(iconColor);
                 icon.setOutlineThickness(1.f);
-                icon.setOutlineColor(sf::Color(0,0,0,80));
+                icon.setOutlineColor(sf::Color(0, 0, 0, 80));
                 window.draw(icon);
 
                 drawText(std::to_string(item->getQuantity()),
@@ -340,7 +308,8 @@ public:
                 drawText(item->getName().substr(0, 2), sx + 11, hotbarY + 14, 11);
             }
 
-            drawText(std::to_string(i + 1), sx + 2, hotbarY + 2, 9, sf::Color(150, 150, 150));
+            drawText(std::to_string(i + 1), sx + 2, hotbarY + 2, 9,
+                     sf::Color(150, 150, 150));
         }
 
         // ── Action hints (bottom-right) ───────────────────────────────────────
@@ -349,12 +318,13 @@ public:
         hints.setFillColor(sf::Color(0, 0, 0, 150));
         window.draw(hints);
 
-        drawText("[A/D] Move   [Space] Jump",      winW - 244, winH - 110, 11);
-        drawText("[LClick] Mine  [RClick] Place",   winW - 244, winH - 96,  11);
-        drawText("[E] Eat   [F] Attack   [Z] Sleep",winW - 244, winH - 82,  11);
-        drawText("[F5] Save   [F9] Load",            winW - 244, winH - 68,  11);
-        drawText("[C] Craft CookedMeat",             winW - 244, winH - 54,  11);
-        drawText("[G] Craft GoldenApple -> WIN!",    winW - 244, winH - 40,  11, sf::Color(255, 215, 0));
+        drawText("[A/D] Move   [Space] Jump",       winW - 244, winH - 110, 11);
+        drawText("[LClick] Mine  [RClick] Place",    winW - 244, winH - 96,  11);
+        drawText("[E] Eat   [F] Attack   [Z] Sleep", winW - 244, winH - 82,  11);
+        drawText("[F5] Save   [F9] Load",             winW - 244, winH - 68,  11);
+        drawText("[C] Craft CookedMeat",              winW - 244, winH - 54,  11);
+        drawText("[G] Craft GoldenApple -> WIN!",     winW - 244, winH - 40,  11,
+                 sf::Color(255, 215, 0));
 
         // ── Event log (top-right) ─────────────────────────────────────────────
         sf::RectangleShape logPanel({ 260.f, (float)(log.size() * 16 + 12) });
