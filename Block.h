@@ -1,9 +1,9 @@
 /**
  * @file Block.h
- * @brief Defines the Block item class and BlockItems factory namespace.
+ * @brief This class defines the Block item class and BlockItems factory namespace.
  *
  * Blocks are placeable tiles that the player mines from the world and can
- * re-place using right-click. Each Block tracks its own durability for the
+ * place using right-click. Each Block tracks its own durability for the
  * item representation (distinct from the world tile durability tracked by
  * World::durabilityMap).
  *
@@ -17,7 +17,7 @@
  * @class Block
  * @brief An Item subclass representing a placeable world tile.
  *
- * Stores per-item durability so that the player's inventory shows how many
+ * This class stores per-item durability so that the player's inventory shows how many
  * hits the block has taken. The solid flag indicates whether the block
  * provides collision when placed in the world.
  *
@@ -43,26 +43,26 @@ public:
           maxDurability(durability), durability(durability), solid(solid) {}
 
     /**
-     * @brief Returns the current remaining durability.
+     * @brief Returns the current remaining durability of the block
      * @return Hits remaining before the block is destroyed.
      */
     int  getDurability()    const { return durability; }
 
     /**
-     * @brief Returns the maximum durability at creation.
+     * @brief Returns the maximum durability of the block
      * @return Maximum hit-points for this block type.
      */
     int  getMaxDurability() const { return maxDurability; }
 
     /**
-     * @brief Returns whether this block provides tile collision.
-     * @return True if solid, false if passable.
+     * @brief Returns whether this block has collision.
+     * @return True if solid, false if not solid (the player can pass through them)
      */
     bool isSolid()          const { return solid; }
 
     /**
      * @brief Returns true when durability has been reduced to zero.
-     * @return True if the block has been destroyed.
+     * @return True if the block has durability 0 (has been destroyed)
      */
     bool isDestroyed()      const { return durability <= 0; }
 
