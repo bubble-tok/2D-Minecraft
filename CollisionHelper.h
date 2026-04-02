@@ -1,127 +1,121 @@
+/**
+ * @file CollisionHelper.h
+ * @brief World constants, TileMap view struct, and tile-collision resolution functions.
+ *
+ * All physics-relevant world dimensions and the two-pass AABB tile collision
+ * algorithm are defined here so that Game, Animal, and Zombie can share the
+ * same movement resolution without a circular dependency on World.
+ *
+ * @author Group 46
+ */
+
 #pragma once
 #include <vector>
 #include <string>
 
-/**
- * @brief Total number of columns in the world tile grid.
- */
+/// Total number of tile columns in the world grid.
 static const int WORLD_COLS = 120;
 
-/**
- * @brief Total number of rows in the world tile grid.
- */
+/// Total number of tile rows in the world grid.
 static const int WORLD_ROWS = 20;
 
-/**
- * @brief Row index of the main ground surface.
- */
+/// Row index of the nominal ground surface (before terrain height variation).
 static const int GROUND_ROW = 9;
 
-/**
- * @brief Size of each tile in pixels.
- */
-static const int TILE_SIZE = 40;
+/// Width and height of one tile in pixels.
+static const int TILE_SIZE  = 40;
 
 /**
  * @struct TileMap
- * @brief A lightweight view of the world block grid used for collision detection.
+ * @brief Lightweight read-only view of the world block grid used for collision.
+ *
+ * TileMap is constructed from World::getTileMap() each physics frame and
+ * passed to resolveTileCollision(). It does not own the block data.
+ *
+ * Three solid predicates allow different collision behaviour per block type:
+ * - Leaves are fully non-solid (entities pass through canopy).
+ * - Wood trunks are solid horizontally but not vertically (entities don't
+ *   stand on top of a trunk mid-air).
+ *
+ * @author Group 46
  */
 struct TileMap {
-    const std::vector<std::vector<std::string>>& blocks;
-    int rows, cols, tileSize;
+    const std::vector<std::vector<std::string>>& blocks; ///< Reference to the world block grid.
+    int rows;     ///< Number of rows in the grid (== WORLD_ROWS).
+    int cols;     ///< Number of columns in the grid (== WORLD_COLS).
+    int tileSize; ///< Pixel size of each tile (== TILE_SIZE).
 
     /**
-     * @brief Returns true if the tile at (r, c) is solid.
-     * @param r Row index
-     * @param c Column index
+     * @brief Returns true if the tile at (r, c) blocks movement in any direction.
+     *
+     * Leaves are always non-solid. Out-of-bounds coordinates return false.
+     *
+     * @param r Row index.
+     * @param c Column index.
+     * @return True if the tile is solid; false if passable or out of bounds.
      */
-    bool isSolid(int r, int c) const {
-        if (r < 0 || r >= rows || c < 0 || c >= cols) return false;
-        return !blocks[r][c].empty();
-    }
+    bool isSolid(int r, int c) const;
+
+    /**
+     * @brief Returns true if the tile acts as a floor or ceiling (Y-axis collision).
+     *
+     * Wood trunks are excluded from Y-axis collision so entities cannot
+     * stand on top of a trunk tile floating in mid-air.
+     *
+     * @param r Row index.
+     * @param c Column index.
+     * @return True if the tile blocks vertical movement.
+     */
+    bool isSolidForY(int r, int c) const;
+
+    /**
+     * @brief Returns true if the tile blocks horizontal movement (X-axis collision).
+     *
+     * All solid tiles (including trunks) block horizontal movement.
+     *
+     * @param r Row index.
+     * @param c Column index.
+     * @return True if the tile blocks horizontal movement.
+     */
+    bool isSolidForX(int r, int c) const;
 };
 
 /**
- * @brief Resolves tile collisions for an entity moving through the world.
+ * @brief Resolves AABB tile collisions for a moving entity in two passes.
  *
- * Performs two passes — first on the Y axis, then on the X axis —
- * to correctly separate the entity from any overlapping solid tiles.
+ * Pass 1 resolves Y-axis overlaps (landing on floors / hitting ceilings).
+ * Pass 2 resolves X-axis overlaps (walking into walls).
+ * Separating the axes prevents corner-clipping artefacts common in single-pass
+ * approaches.
  *
- * @param px Entity X position (modified in place)
- * @param py Entity Y position (modified in place)
- * @param vx Entity horizontal velocity
- * @param vy Entity vertical velocity (modified in place)
- * @param onGround Set to true if the entity lands on a tile this frame
- * @param map The tile map to collide against
+ * Uses isSolidForY and isSolidForX so that block-type-specific rules
+ * (Wood trunks, Leaves) are respected automatically.
+ *
+ * @param px       Entity X position (modified in place).
+ * @param py       Entity Y position (modified in place).
+ * @param vx       Current horizontal velocity (read-only; used for push-out direction).
+ * @param vy       Current vertical velocity (modified in place; zeroed on collision).
+ * @param onGround Set to true if the entity lands on a tile this frame.
+ * @param map      TileMap view to collide against.
+ *
+ * @author Group 46
  */
-inline void resolveTileCollision(float& px, float& py,
-    float  vx, float& vy,
-    bool& onGround,
-    const TileMap& map)
-{
-    const float W = (float)map.tileSize;
-    const float H = (float)map.tileSize;
-    onGround = false;
-
-    // --- Pass 1: Y axis ---
-    for (int r = 0; r < map.rows; ++r) {
-        for (int c = 0; c < map.cols; ++c) {
-            if (!map.isSolid(r, c)) continue;
-
-            float tL = c * W, tR = tL + W;
-            float tT = r * H, tB = tT + H;
-
-            if (px + W <= tL + 1.f || px >= tR - 1.f) continue;
-
-            if (vy >= 0.f && py + H > tT && py + H <= tB) {
-                py = tT - H;
-                vy = 0.f;
-                onGround = true;
-            }
-            else if (vy < 0.f && py < tB && py >= tT) {
-                py = tB;
-                vy = 0.f;
-            }
-        }
-    }
-
-    // --- Pass 2: X axis ---
-    for (int r = 0; r < map.rows; ++r) {
-        for (int c = 0; c < map.cols; ++c) {
-            if (!map.isSolid(r, c)) continue;
-
-            float tL = c * W, tR = tL + W;
-            float tT = r * H, tB = tT + H;
-
-            if (py + H <= tT + 1.f || py >= tB - 1.f) continue;
-
-            if (vx > 0.f && px + W > tL && px + W <= tR)
-                px = tL - W;
-            else if (vx < 0.f && px < tR && px >= tL)
-                px = tR;
-        }
-    }
-}
+void resolveTileCollision(float& px, float& py,
+                          float vx, float& vy,
+                          bool& onGround,
+                          const TileMap& map);
 
 /**
- * @brief Returns true if there is a clear tile-height gap above the entity.
+ * @brief Returns true if there is at least one tile of clear space above the entity.
  *
- * Used to prevent jumping through a ceiling.
+ * Used to prevent entities from jumping into a ceiling by verifying headroom
+ * before applying upward velocity.
  *
- * @param px Entity X position
- * @param py Entity Y position
- * @param map The tile map to check against
+ * @param px  Entity X position.
+ * @param py  Entity Y position.
+ * @param map TileMap view to check against.
+ * @return True if the tiles immediately above the entity are empty.
+ *
+ * @author Group 46
  */
-inline bool hasHeadroomAbove(float px, float py, const TileMap& map) {
-    const float W = (float)map.tileSize;
-    const float H = (float)map.tileSize;
-
-    int headRow = (int)((py - 1.f) / H);
-    int colL = (int)(px / W);
-    int colR = (int)((px + W - 1.f) / W);
-
-    if (headRow < 0) return false;
-    if (map.isSolid(headRow, colL)) return false;
-    if (map.isSolid(headRow, colR)) return false;
-    return true;
-}
+bool hasHeadroomAbove(float px, float py, const TileMap& map);
