@@ -1,6 +1,11 @@
 /**
  * @file Health.h
- * @brief Defines the Health class used to manage entity health values.
+ * @brief Defines the Health class for managing entity hit points.
+ *
+ * Health encapsulates an entity's current and maximum HP, clamping all
+ * modifications so the value never goes below 0 or above maxHp.
+ *
+ * @author Group 46
  */
 
 #pragma once
@@ -8,75 +13,59 @@
 
 /**
  * @class Health
- * @brief Manages health values for an entity.
+ * @brief Manages an entity's hit-point pool.
  *
- * The Health class stores the current health points and the maximum health.
- * It provides functions to increase, decrease, and clamp health values so
- * that they always remain within valid bounds.
+ * Provides clamped increase/decrease operations and a dead-state query.
+ * Used by Entity as a composition member rather than direct int fields so
+ * the clamping logic is centralised in one place.
+ *
+ * @author Group 46
  */
 class Health {
 private:
-    int hp;     ///< Current health points
-    int maxHp;  ///< Maximum health points allowed
+    int hp;     ///< Current hit points.
+    int maxHp;  ///< Maximum hit points; hp is always clamped to [0, maxHp].
 
 public:
-
     /**
-     * @brief Constructs a Health object.
-     *
-     * Initializes both the current health and maximum health to the same value.
-     *
-     * @param maxHp Maximum health value (default = 100)
+     * @brief Constructs a Health instance at full capacity.
+     * @param maxHp Maximum (and initial) hit-point value. Defaults to 100.
      */
     Health(int maxHp = 100) : hp(maxHp), maxHp(maxHp) {}
 
     /**
-     * @brief Decreases the current health.
-     *
-     * Reduces health by the specified amount but prevents the value
-     * from dropping below zero.
-     *
-     * @param amount Amount of damage to apply
+     * @brief Reduces current HP by the given amount, clamped to 0.
+     * @param amount Number of hit points to remove (must be positive).
      */
     void decrease(int amount) { hp = std::max(0, hp - amount); }
 
     /**
-     * @brief Increases the current health.
-     *
-     * Adds the specified amount of health but prevents the value
-     * from exceeding the maximum health.
-     *
-     * @param amount Amount of health to restore
+     * @brief Restores HP by the given amount, clamped to maxHp.
+     * @param amount Number of hit points to restore (must be positive).
      */
     void increase(int amount) { hp = std::min(maxHp, hp + amount); }
 
     /**
-     * @brief Checks whether the entity is dead.
-     *
-     * @return True if health is zero or below
+     * @brief Returns true when current HP has reached zero.
+     * @return True if the entity is dead, false otherwise.
      */
-    bool isDead() const { return hp <= 0; }
+    bool isDead()   const { return hp <= 0; }
 
     /**
-     * @brief Gets the current health value.
-     *
-     * @return Current health points
+     * @brief Returns the current hit-point value.
+     * @return Current HP in the range [0, maxHp].
      */
-    int getHp() const { return hp; }
+    int  getHp()    const { return hp; }
 
     /**
-     * @brief Gets the maximum health value.
-     *
-     * @return Maximum health points
+     * @brief Returns the maximum hit-point cap.
+     * @return Maximum HP value set at construction.
      */
-    int getMaxHp() const { return maxHp; }
+    int  getMaxHp() const { return maxHp; }
 
     /**
-     * @brief Sets the current health value.
-     *
-     * The value is clamped between 0 and maxHp to prevent invalid states.
-     *
-     * @param h New health value
+     * @brief Directly sets HP to an arbitrary value, clamped to [0, maxHp].
+     * @param h The desired HP value before clamping.
      */
     void setHp(int h) { hp = std::clamp(h, 0, maxHp); }
 };
