@@ -93,9 +93,6 @@ sf::Vector2f DayCycle::getMoonPosition(float screenW, float screenH) const {
     return {x, y};
 }
 
-float DayCycle::getDayTime()  const { return dayTime; }
-int   DayCycle::getDayCount() const { return dayCount; }
-
 float DayCycle::getNightDarkness() const {
     if (dayTime < EVENING_START) return 0.f;
     if (dayTime < NIGHT_START) {

@@ -20,8 +20,6 @@ bool TileMap::isSolid(int r, int c) const {
 
 bool TileMap::isSolidForY(int r, int c) const {
     if (!isSolid(r, c)) return false;
-    // Wood trunks don't act as floors — entities fall through the trunk column
-    return blocks[r][c] != "Wood";
 }
 
 bool TileMap::isSolidForX(int r, int c) const {
@@ -57,13 +55,17 @@ void resolveTileCollision(float& px, float& py,
             bool overlapY = (py < tB) && (py + H > tT);
             if (!overlapY) continue;
 
-            if (vy >= 0.f) {
-                // Falling or stationary — snap to top of tile (land)
+            float playerBottom = py + H;
+            float playerTop = py;
+
+            // Landing only if the player is above the tile top
+            if (vy > 0.f && playerBottom <= tT + 12.f && playerTop < tT) {
                 py = tT - H;
                 vy = 0.f;
                 onGround = true;
-            } else {
-                // Rising — hit the underside of a tile (ceiling bump)
+            }
+            // Ceiling hit only if the player is below the tile
+            else if (vy < 0.f && playerTop >= tB - 12.f) {
                 py = tB;
                 vy = 0.f;
             }

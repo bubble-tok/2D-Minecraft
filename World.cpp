@@ -199,58 +199,102 @@ void World::removeDeadEntities() {
 }
 
 void World::separateEntities(Entity& player) {
-    // Entities are one tile wide (TILE_SIZE = 40px). Two entities are
-    // considered overlapping when their X centres are closer than this.
     static constexpr float ENTITY_SEPARATION_DIST = 36.f;
 
-    // Helper: push two entities apart if their horizontal distance is less
-    // than the separation threshold. Each entity moves half the penetration
-    // depth so the correction is symmetric and momentum-neutral.
     auto pushApart = [&](Entity& a, Entity& b) {
         float dx = b.getX() - a.getX();
         float dist = std::abs(dx);
         if (dist < ENTITY_SEPARATION_DIST && dist > 0.01f) {
-            // Calculate how much overlap exists and split it evenly
             float overlap = ENTITY_SEPARATION_DIST - dist;
-            float push    = overlap * 0.5f;
-            float dir     = (dx > 0.f) ? 1.f : -1.f;
+            float push = overlap * 0.5f;
+            float dir = (dx > 0.f) ? 1.f : -1.f;
 
-            // Clamp to world bounds after push
             float newAx = std::max(0.f,
-                          std::min((WORLD_COLS - 1) * (float)TILE_SIZE,
-                                   a.getX() - dir * push));
+                std::min((WORLD_COLS - 1) * (float)TILE_SIZE,
+                    a.getX() - dir * push));
             float newBx = std::max(0.f,
-                          std::min((WORLD_COLS - 1) * (float)TILE_SIZE,
-                                   b.getX() + dir * push));
+                std::min((WORLD_COLS - 1) * (float)TILE_SIZE,
+                    b.getX() + dir * push));
             a.setX(newAx);
             b.setX(newBx);
         }
-    };
+        };
 
-    // ── Animal vs animal ──────────────────────────────────────────────────
+    // animal vs animal
     for (int i = 0; i < (int)animals.size(); ++i)
         for (int j = i + 1; j < (int)animals.size(); ++j)
             if (animals[i]->isAlive() && animals[j]->isAlive())
                 pushApart(*animals[i], *animals[j]);
 
-    // ── Zombie vs zombie ──────────────────────────────────────────────────
+    // zombie vs zombie
     for (int i = 0; i < (int)zombies.size(); ++i)
         for (int j = i + 1; j < (int)zombies.size(); ++j)
             if (zombies[i]->isAlive() && zombies[j]->isAlive())
                 pushApart(*zombies[i], *zombies[j]);
 
-    // ── Animal vs zombie ──────────────────────────────────────────────────
+    // animal vs zombie
     for (auto& a : animals)
         for (auto& z : zombies)
             if (a->isAlive() && z->isAlive())
                 pushApart(*a, *z);
 
-    // ── All entities vs player ────────────────────────────────────────────
+    auto resolvePlayerVsEntity = [&](Entity& e) {
+        float px = player.getX();
+        float py = player.getY();
+        float ex = e.getX();
+        float ey = e.getY();
+
+        // AABB overlap
+        bool overlapX = px < ex + TILE_SIZE && px + TILE_SIZE > ex;
+        bool overlapY = py < ey + TILE_SIZE && py + TILE_SIZE > ey;
+        if (!overlapX || !overlapY) return;
+
+        float playerBottom = py + TILE_SIZE;
+        float playerTop = py;
+        float playerRight = px + TILE_SIZE;
+        float playerLeft = px;
+
+        float entityTop = ey;
+        float entityBottom = ey + TILE_SIZE;
+        float entityLeft = ex;
+        float entityRight = ex + TILE_SIZE;
+
+        // overlap amounts
+        float overlapFromTop = playerBottom - entityTop;      // player landing on entity
+        float overlapFromLeft = playerRight - entityLeft;     // player hits entity from left
+        float overlapFromRight = entityRight - playerLeft;    // player hits entity from right
+
+        // Top landing check:
+        // only if player is near top of entity, not deep inside it
+        if (playerBottom > entityTop &&
+            playerBottom < entityTop + 16.f &&
+            playerTop < entityTop)
+        {
+            player.setY(entityTop - TILE_SIZE);
+
+            // If your Entity/Player class has these, add them:
+            // player.setVelocityY(0.f);
+            // player.setOnGround(true);
+
+            return;
+        }
+
+        // Otherwise side block only
+        if (overlapFromLeft < overlapFromRight) {
+            player.setX(entityLeft - TILE_SIZE);
+        }
+        else {
+            player.setX(entityRight);
+        }
+        };
+
     for (auto& a : animals)
-        if (a->isAlive()) pushApart(*a, player);
+        if (a->isAlive())
+            resolvePlayerVsEntity(*a);
 
     for (auto& z : zombies)
-        if (z->isAlive()) pushApart(*z, player);
+        if (z->isAlive())
+            resolvePlayerVsEntity(*z);
 }
 
 void World::update(float dt, Entity& player) {
@@ -265,7 +309,7 @@ void World::update(float dt, Entity& player) {
     separateEntities(player);
 
     float progress = player.getX() / (WORLD_COLS * TILE_SIZE);
-    float interval = std::max(3.f, 8.f - progress * 5.f);
+    float interval = std::max(5.f, 12.f - progress * 5.f);
     spawnTimer += dt;
     if (spawnTimer >= interval) { spawnTimer = 0.f; trySpawnZombie(player.getX()); }
 }

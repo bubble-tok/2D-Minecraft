@@ -86,7 +86,7 @@ public:
      * @brief Returns the normalised day progress in [0, 1).
      * @return Current position within the day cycle.
      */
-    float       getDayTime()   const { return dayTime; }
+    float       getDayTime()   const { return dayTime;}
 
     /**
      * @brief Returns the total number of days elapsed since game start.
