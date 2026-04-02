@@ -1,6 +1,6 @@
 /**
  * @file CraftingUI.cpp
- * @brief Implements the graphical crafting panel rendering and input handling.
+ * @brief This class implements the graphical crafting panel rendering and input handling.
  *
  * @author Group 46
  */
@@ -15,6 +15,7 @@ void CraftingUI::toggle() { isOpen = !isOpen; }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// Color of items in the crafting menu
 sf::Color CraftingUI::itemColor(const std::string& name, ItemType type) const {
     if (name == "GoldenApple")                          return sf::Color(255,215,  0);
     if (name == "Gold")                                 return sf::Color(255,200,  0);
