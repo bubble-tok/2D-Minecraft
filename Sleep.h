@@ -1,77 +1,75 @@
+/**
+ * @file Sleep.h
+ * @brief Defines the Sleep class for tracking player fatigue level.
+ *
+ * Sleep drains faster at night and when the player is moving. When fully
+ * depleted it slows the player and triggers a warning. The player can
+ * restore it by sleeping near a placed Bed during Night phase.
+ *
+ * @author Group 46
+ */
+
 #pragma once
 #include <algorithm>
 
 /**
  * @class Sleep
- * @brief Manages the player's sleep (fatigue) system.
+ * @brief Tracks the player's current energy (sleep) level.
  *
- * The Sleep class tracks how rested the player is. The sleep level
- * gradually decreases over time, representing fatigue. When the
- * player sleeps, the sleep level is fully restored. If the level
- * reaches zero, gameplay effects such as reduced movement speed
- * may occur.
+ * Operates identically to Hunger but represents fatigue instead of
+ * satiation. When isEmpty() is true the player's movement speed is halved.
+ *
+ * @author Group 46
  */
 class Sleep {
 private:
-    int level;    ///< Current sleep level (how rested the player is)
-    int maxLevel; ///< Maximum sleep level
+    int level;    ///< Current sleep level; 0 means the player is exhausted.
+    int maxLevel; ///< Maximum sleep capacity.
 
 public:
-
     /**
-     * @brief Constructs a Sleep object.
-     *
-     * Initializes both the current sleep level and maximum sleep
-     * level to the same value.
-     *
-     * @param maxLevel Maximum sleep value (default = 100)
+     * @brief Constructs a Sleep instance at full capacity.
+     * @param maxLevel Maximum (and initial) sleep level. Defaults to 100.
      */
     Sleep(int maxLevel = 100) : level(maxLevel), maxLevel(maxLevel) {}
 
     /**
-     * @brief Decreases the sleep level over time.
+     * @brief Decreases sleep level by the given amount, clamped to 0.
      *
-     * This function simulates fatigue building up as time passes.
-     * The level will never drop below zero.
+     * Called each game tick — twice as fast during Night phase.
      *
-     * @param amount Amount of sleep to decrease (default = 1)
+     * @param amount Points of sleep to remove. Defaults to 1.
      */
     void decrease(int amount = 1) { level = std::max(0, level - amount); }
 
     /**
-     * @brief Restores sleep level to maximum.
+     * @brief Fully restores the sleep level to maxLevel.
      *
-     * Called when the player sleeps, fully restoring the fatigue meter.
+     * Called when the player sleeps in a Bed during Night.
      */
     void sleep() { level = maxLevel; }
 
     /**
-     * @brief Checks whether the player is fully exhausted.
-     *
-     * @return True if sleep level is zero or below
+     * @brief Returns true when sleep level has reached zero.
+     * @return True if the player is exhausted, false otherwise.
      */
-    bool isEmpty() const { return level <= 0; }
+    bool isEmpty()     const { return level <= 0; }
 
     /**
-     * @brief Gets the current sleep level.
-     *
-     * @return Current sleep value
+     * @brief Returns the current sleep level.
+     * @return Current level in the range [0, maxLevel].
      */
-    int getLevel() const { return level; }
+    int  getLevel()    const { return level; }
 
     /**
-     * @brief Gets the maximum sleep level.
-     *
-     * @return Maximum sleep value
+     * @brief Returns the sleep capacity.
+     * @return Maximum sleep level set at construction.
      */
-    int getMaxLevel() const { return maxLevel; }
+    int  getMaxLevel() const { return maxLevel; }
 
     /**
-     * @brief Sets the sleep level.
-     *
-     * The value is clamped between 0 and maxLevel to prevent invalid values.
-     *
-     * @param l New sleep level
+     * @brief Directly sets the sleep level, clamped to [0, maxLevel].
+     * @param l The desired level before clamping.
      */
     void setLevel(int l) { level = std::clamp(l, 0, maxLevel); }
 };
