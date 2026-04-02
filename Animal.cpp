@@ -2,7 +2,7 @@
  * @file Animal.cpp
  * @brief Implements Animal wandering physics and meat drop behaviour.
  *
- * This class represents an animal in the game, storing information about the
+ * @details This class represents an animal in the game, storing information about the
  * health, meat type and amount of meat dropped, as well as managing the
  * movement and physics of the animal.
  *
