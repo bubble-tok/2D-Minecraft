@@ -271,7 +271,7 @@ void Game::handleEat() {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 void Game::update(float dt) {
-    pendingEvents.clear();
+    //pendingEvents.clear();
 
     // Track day changes for NewDay event
     int prevDay = dayCycle.getDayCount();
