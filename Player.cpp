@@ -1,7 +1,9 @@
 /**
  * @file Player.cpp
- * @brief Implements Player combat, inventory interaction, and tool stat queries.
+ * @brief This class implements Player combat, inventory interaction, and tool stat queries.
  *
+ * The player is able to attack, eat, as well as equip tools which can enhance attack power or breaking speed.
+ * The player also has an inventory.
  * @author Group 46
  */
 #include "Player.h"
@@ -13,7 +15,7 @@ Player::Player(float x, float y) : Entity(x, y, 100) {}
 bool Player::attack(Entity& target, int totalDamage) {
     float dx   = target.getX() - this->x;
     float dy   = target.getY() - this->y;
-    // Only attack if target is within melee range
+    // Only attack another entity if it is within range.
     if (std::sqrt(dx * dx + dy * dy) > attackRange) return false;
     target.takeDamage(totalDamage); // respects target's invincible flag
     return true;
