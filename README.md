@@ -32,7 +32,7 @@ Requires SFML (it is already configured in the project).
 
 ## Acceptance Tests
 
-# 0.1 — Hunting
+## 0.1 — Hunting
 
 User Story:As a player, I want to hunt an animal and store its meat so I can eat it when hungry.
 
@@ -48,7 +48,7 @@ Fail: Meat doesn't appear, or eating has no effect.
 
 ---
 
-#0.2 — Moving forward and backwards
+## 0.2 — Moving forward and backwards
 
 User Story: As a player, I want to move left and right to reach animals and blocks.
 
@@ -61,7 +61,7 @@ Fail: Player doesn't move, or moves the wrong way.
 
 ---
 
-# 0.3 — Jumping
+## 0.3 — Jumping
 
 User Story:As a player, I want to jump to get on top of blocks.
 
@@ -74,7 +74,7 @@ Fail: Player doesn't leave the ground, or can double-jump.
 
 ---
 
-### 0.4 — Item placement
+## 0.4 — Item placement
 
 **User Story:** As a player, I want to place items from my inventory into the world.
 
@@ -88,7 +88,7 @@ Fail: Block doesn't appear, or count doesn't decrease.
 
 ---
 
-# 0.5 — Item pickup
+## 0.5 — Item pickup
 
 User Story: As a player, I want to pick up items so I can store them for later.
 
@@ -101,7 +101,7 @@ Fail: Item doesn't appear in inventory, or stays in the world after pickup.
 
 ---
 
-# 0.6 — Being attacked by zombies
+## 0.6 — Being attacked by zombies
 
 User Story: As a player, if a zombie hits me, my health should go down.
 
@@ -115,7 +115,7 @@ Fail: HP doesn't change after being hit.
 
 ---
 
-# 0.7 — Attack
+## 0.7 — Attack
 User Story: As a player, I want to attack enemies and animals to get resources.
 
 1. Target is within attack range, player presses `F`, target takes 10 damage.
