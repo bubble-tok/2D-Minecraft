@@ -1,10 +1,10 @@
 /**
  * @file Hunger.h
- * @brief Defines the Hunger class for tracking player satiation level.
+ * @brief This class defines the Hunger class for tracking player satiation level.
  *
- * Hunger drains over time as the player moves and exists, and is restored
+ * Hunger is lost over time and when the player is moving, and is restored
  * by consuming food items. When the level reaches zero, the player begins
- * losing HP from starvation.
+ * to lose HP.
  *
  * @author Group 46
  */
@@ -14,10 +14,10 @@
 
 /**
  * @class Hunger
- * @brief Tracks the player's current hunger (satiation) level.
+ * @brief Tracks the player's current hunger level.
  *
  * The hunger level starts at maxLevel and decreases each tick. Food items
- * call increase() to restore it. The value is always clamped to [0, maxLevel].
+ * call increase() to restore it. The value is always clamped to [0, maxLevel], similar to health.
  *
  * @author Group 46
  */
@@ -70,8 +70,8 @@ public:
     int  getMaxLevel() const { return maxLevel; }
 
     /**
-     * @brief Directly sets the hunger level, clamped to [0, maxLevel].
-     * @param l The desired level before clamping.
+     * @brief Ensures the hunger level is set between 0 and the max hunger level
+     * @param l The hunger level before clamping
      */
     void setLevel(int l) { level = std::clamp(l, 0, maxLevel); }
 };
