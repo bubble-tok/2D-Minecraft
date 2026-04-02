@@ -2,9 +2,8 @@
  * @file Health.h
  * @brief Defines the Health class for managing entity hit points.
  *
- * Health encapsulates an entity's current and maximum HP, clamping all
- * modifications so the value never goes below 0 or above maxHp.
- *
+ * The Health class encapsulates an entity's current and maximum HP and
+ * ensures that an entity cannot exceed their max HP or be lower than 0.
  * @author Group 46
  */
 
@@ -34,13 +33,13 @@ public:
     Health(int maxHp = 100) : hp(maxHp), maxHp(maxHp) {}
 
     /**
-     * @brief Reduces current HP by the given amount, clamped to 0.
+     * @brief Reduces current HP by the given amount, minimum is 0.
      * @param amount Number of hit points to remove (must be positive).
      */
     void decrease(int amount) { hp = std::max(0, hp - amount); }
 
     /**
-     * @brief Restores HP by the given amount, clamped to maxHp.
+     * @brief Restores HP by the given amount, maximum HP is given by maxHp
      * @param amount Number of hit points to restore (must be positive).
      */
     void increase(int amount) { hp = std::min(maxHp, hp + amount); }
@@ -64,7 +63,7 @@ public:
     int  getMaxHp() const { return maxHp; }
 
     /**
-     * @brief Directly sets HP to an arbitrary value, clamped to [0, maxHp].
+     * @brief Clamps the health between 0 and maxHp if not in the range.
      * @param h The desired HP value before clamping.
      */
     void setHp(int h) { hp = std::clamp(h, 0, maxHp); }
