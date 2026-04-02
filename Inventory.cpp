@@ -1,7 +1,9 @@
 /**
  * @file Inventory.cpp
- * @brief Implements Inventory slot management, stacking, eating, and serialisation.
+ * @brief This class implements Inventory slot management, stacking, eating, and serialisation.
  *
+ * This class provides additional inventory space to the user to store items. Items can be removed
+ * or consumed, and new items that fill the hotbar will go into the inventory.
  * @author Group 46
  */
 
