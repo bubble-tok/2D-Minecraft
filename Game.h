@@ -3,8 +3,7 @@
  * @brief Declares the Game class the central engine for the game.
  *
  * This header file declares the engine for the game, where many aspects of
- * the game is managed. Game loop, events, load/save states, physics, game
- * mechanics, game actions are handled here.
+ * the game is managed.
  * @author Group 46
  */
 #pragma once
@@ -102,7 +101,7 @@ public:
     static constexpr float REACH_DISTANCE = 120.f;
 
     /**
-     * @brief Constructs the Game, initialising all subsystems to their defaults.
+     * @brief This constructs the Game, initialising all subsystems to their defaults.
      */
     Game();
 
