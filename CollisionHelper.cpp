@@ -1,6 +1,16 @@
 /**
  * @file CollisionHelper.cpp
- * @brief The CollisionHelper.cpp file implements TileMap solid checks and the two-pass AABB collision resolver.
+ * @brief Implements tile-based collision detection and resolution utilities.
+ *
+ * This file provides helper functions used to detect and resolve collisions
+ * between entities and the tile-based world. It includes:
+ * 
+ * - Solid tile checks (TileMap)
+ * - Two-pass collision resolution (vertical then horizontal)
+ * - Headroom detection for jumping logic
+ *
+ * The collision system uses Axis-Aligned Bounding Boxes (AABB) and separates
+ * vertical and horizontal movement to ensure stable and predictable behavior.
  *
  * @author Group 46
  */
@@ -9,57 +19,93 @@
 
 // ── TileMap solid predicates ──────────────────────────────────────────────────
 
+/**
+ * @brief Determines whether a tile is solid at a given row and column.
+ *
+ * This function checks if a tile should block movement. It treats:
+ * - Out-of-bounds tiles as non-solid (air)
+ * - Empty tiles as non-solid
+ * - "Leaves" as non-solid (entities can pass through)
+ *
+ * @param r Tile row index.
+ * @param c Tile column index.
+ * @return True if the tile is solid, false otherwise.
+ */
 bool TileMap::isSolid(int r, int c) const {
-    // The function treats out-of-bounds tiles as air.
     if (r < 0 || r >= rows || c < 0 || c >= cols) return false;
 
     const std::string& b = blocks[r][c];
 
-    // The function treats an empty tile as air.
     if (b.empty()) return false;
-
-    // The function allows entities to pass through Leaves tiles.
     if (b == "Leaves") return false;
 
     return true;
 }
 
+/**
+ * @brief Checks vertical collision solidity.
+ *
+ * Currently identical to isSolid(), but separated for flexibility
+ * if different behavior is needed for vertical collisions.
+ *
+ * @param r Tile row.
+ * @param c Tile column.
+ * @return True if solid for vertical collision.
+ */
 bool TileMap::isSolidForY(int r, int c) const {
     return isSolid(r, c);
 }
 
+/**
+ * @brief Checks horizontal collision solidity.
+ *
+ * Uses the same logic as isSolid(), but allows customization
+ * for horizontal movement if needed.
+ *
+ * @param r Tile row.
+ * @param c Tile column.
+ * @return True if solid for horizontal collision.
+ */
 bool TileMap::isSolidForX(int r, int c) const {
-    // The function uses the general solid check for horizontal collision, including tree trunks.
     return isSolid(r, c);
 }
 
 // ── Tile collision resolution ─────────────────────────────────────────────────
 
 /**
- * @brief The resolveTileCollision function resolves tile collisions for an entity using separate vertical and horizontal passes.
+ * @brief Resolves collisions between an entity and solid tiles.
  *
- * The resolveTileCollision function first resolves vertical overlap so the entity
- * can land on floors or hit ceilings correctly. The resolveTileCollision function
- * then resolves horizontal overlap so the entity does not pass through walls.
+ * This function performs collision resolution in two passes:
  *
- * @param px The px parameter stores the x-position of the entity and is updated during collision resolution.
- * @param py The py parameter stores the y-position of the entity and is updated during collision resolution.
- * @param vx The vx parameter represents the horizontal velocity of the entity.
- * @param vy The vy parameter stores the vertical velocity of the entity and is updated during collision resolution.
- * @param onGround The onGround parameter indicates whether the entity is standing on solid ground after collision resolution.
- * @param map The map parameter represents the TileMap used for collision checks.
+ * 1. Vertical pass:
+ *    - Handles landing on the ground
+ *    - Handles hitting ceilings
+ *    - Updates vertical velocity and ground state
+ *
+ * 2. Horizontal pass:
+ *    - Prevents movement through walls
+ *    - Pushes entity out of tiles based on smallest overlap
+ *
+ * Separating the axes avoids jitter and ensures stable physics behavior.
+ *
+ * @param px Reference to entity x-position (modified during resolution).
+ * @param py Reference to entity y-position (modified during resolution).
+ * @param vx Horizontal velocity (used for context, not modified here).
+ * @param vy Reference to vertical velocity (modified when collision occurs).
+ * @param onGround Set to true if entity lands on a surface.
+ * @param map The TileMap used for collision checks.
  */
 void resolveTileCollision(float& px, float& py,
                           float  vx, float& vy,
                           bool& onGround,
                           const TileMap& map)
 {
-    const float W = (float)map.tileSize; // The W variable stores the tile width in pixels.
-    const float H = (float)map.tileSize; // The H variable stores the tile height in pixels.
+    const float W = (float)map.tileSize;
+    const float H = (float)map.tileSize;
+
     onGround = false;
 
-    // The first pass resolves collisions on the Y axis.
-    // The overlap test does not depend on velocity alone, which helps prevent tunneling through thin floors.
+    // ── PASS 1: Vertical collision ───────────────────────────────
     for (int r = 0; r < map.rows; ++r) {
         for (int c = 0; c < map.cols; ++c) {
             if (!map.isSolidForY(r, c)) continue;
@@ -67,8 +113,7 @@ void resolveTileCollision(float& px, float& py,
             float tL = c * W, tR = tL + W;
             float tT = r * H, tB = tT + H;
 
-            // The function skips tiles that do not overlap horizontally with the entity.
-            // The small epsilon reduces jitter when the entity stands on a tile edge.
+            // Skip if no horizontal overlap
             if (px + W <= tL + 0.5f || px >= tR - 0.5f) continue;
 
             bool overlapY = (py < tB) && (py + H > tT);
@@ -77,21 +122,21 @@ void resolveTileCollision(float& px, float& py,
             float playerBottom = py + H;
             float playerTop = py;
 
-            // The function treats the collision as a landing when the entity approaches from above.
+            // Landing on ground
             if (vy > 0.f && playerBottom <= tT + 12.f && playerTop < tT) {
-                py = tT - H;
-                vy = 0.f;
+                py = tT - H;   // Snap to top of tile
+                vy = 0.f;      // Stop downward velocity
                 onGround = true;
             }
-            // The function treats the collision as a ceiling hit when the entity approaches from below.
+            // Hitting ceiling
             else if (vy < 0.f && playerTop >= tB - 12.f) {
-                py = tB;
-                vy = 0.f;
+                py = tB;       // Push down
+                vy = 0.f;      // Stop upward velocity
             }
         }
     }
 
-    // The second pass resolves collisions on the X axis.
+    // ── PASS 2: Horizontal collision ─────────────────────────────
     for (int r = 0; r < map.rows; ++r) {
         for (int c = 0; c < map.cols; ++c) {
             if (!map.isSolidForX(r, c)) continue;
@@ -99,20 +144,21 @@ void resolveTileCollision(float& px, float& py,
             float tL = c * W, tR = tL + W;
             float tT = r * H, tB = tT + H;
 
-            // The function skips tiles that do not overlap vertically with the entity.
+            // Skip if no vertical overlap
             if (py + H <= tT + 0.5f || py >= tB - 0.5f) continue;
 
             bool overlapX = (px < tR) && (px + W > tL);
             if (!overlapX) continue;
 
-            // The function compares the two penetration depths and pushes the entity out on the shallower side.
-            float penLeft  = (px + W) - tL; // The penLeft variable stores the overlap depth from the left side.
-            float penRight = tR - px;       // The penRight variable stores the overlap depth from the right side.
+            // Calculate penetration depths
+            float penLeft  = (px + W) - tL;
+            float penRight = tR - px;
 
+            // Resolve on the shallowest side
             if (penLeft < penRight)
-                px = tL - W; // The function places the entity to the left of the tile.
+                px = tL - W;
             else
-                px = tR;     // The function places the entity to the right of the tile.
+                px = tR;
         }
     }
 }
@@ -120,31 +166,27 @@ void resolveTileCollision(float& px, float& py,
 // ── Headroom check ────────────────────────────────────────────────────────────
 
 /**
- * @brief The hasHeadroomAbove function checks whether there is open space directly above the entity.
+ * @brief Checks if there is space above the entity.
  *
- * The hasHeadroomAbove function checks the tiles above the left and right sides
- * of the entity. The function returns false if solid terrain blocks the space above.
+ * This is used for jump validation to prevent the player from moving upward
+ * into a solid block. It checks both left and right edges above the entity.
  *
- * @param px The px parameter represents the x-position of the entity.
- * @param py The py parameter represents the y-position of the entity.
- * @param map The map parameter represents the TileMap used for collision checks.
- * @return The function returns true if the space above the entity is clear, and false if solid tiles block the space.
+ * @param px Entity x-position.
+ * @param py Entity y-position.
+ * @param map TileMap used for checking.
+ * @return True if space above is clear, false otherwise.
  */
 bool hasHeadroomAbove(float px, float py, const TileMap& map) {
     const float W = (float)map.tileSize;
     const float H = (float)map.tileSize;
 
-    int headRow = (int)((py - 1.f) / H);      // The headRow variable stores the row directly above the entity.
-    int colL    = (int)(px / W);              // The colL variable stores the column at the left edge of the entity.
-    int colR    = (int)((px + W - 1.f) / W);  // The colR variable stores the column at the right edge of the entity.
+    int headRow = (int)((py - 1.f) / H);
+    int colL    = (int)(px / W);
+    int colR    = (int)((px + W - 1.f) / W);
 
-    // The function returns false when the checked space is above the world boundary.
     if (headRow < 0) return false;
 
-    // The function returns false when the left side above the entity is blocked.
     if (map.isSolid(headRow, colL)) return false;
-
-    // The function returns false when the right side above the entity is blocked.
     if (map.isSolid(headRow, colR)) return false;
 
     return true;
