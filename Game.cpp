@@ -2,6 +2,9 @@
  * @file Game.cpp
  * @brief Implements the Game controller: physics, survival, mining, combat, and crafting.
  *
+ * This class file declares the engine for the game, where many aspects of
+ * the game is managed. Game loop, events, load/save states, physics, game
+ * mechanics (like block drops), game actions are handled here.
  * @author Group 46
  */
 #include "Game.h"
@@ -57,7 +60,7 @@ void Game::tickPhysics(float dt) {
     if (player.getSleep().isEmpty()) vx *= 0.5f; // exhaustion penalty
 
     px += vx * dt;
-    // Clamp to world horizontal bounds
+    // Clamp to world horizontal bounds (ensure the player is in the bounds of the game)
     px = std::max(0.f, std::min((WORLD_COLS - 1) * (float)TILE_SIZE, px));
 
     // Coyote time: keep jump available briefly after walking off a ledge
