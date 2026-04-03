@@ -1,3 +1,14 @@
+/**
+ * @file World.cpp
+ * @brief This class places all the blocks and spawns monsters into the world.
+ *
+ * This class allows for generating the terrain, as well as placing structures 
+ * like trees. It also handles removing and adding blocks to the game world. 
+ * Entities can also be spawned and removed as needed.
+ * @author Group 46
+ */
+
+
 #include "World.h"
 #include <algorithm>
 #include <cstdlib>
