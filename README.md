@@ -1,140 +1,240 @@
 # Group 46 — 2D Survival Game
 
-A 2D Minecraft-style survival game in C++ with SFML. Mine blocks, hunt animals, craft food, and eat a Golden Apple to win.
+A 2D Minecraft-style survival game built in C++ with SFML.  
+Explore, mine blocks, gather resources, hunt animals, fight zombies, craft items, and eat a Golden Apple to win.
+
+---
 
 ## Controls
 
-| Key / Button | Action |
-|---|---|
-| A / D | Move left / right |
-| Space | Jump |
-| Left Click (hold) | Mine block |
-| Right Click | Place selected block |
-| 1 – 9 | Select hotbar slot |
-| E | Eat selected food |
-| F | Attack nearby enemy/animal |
-| Z | Sleep |
-| B | Craft Bread (3× Wheat) |
-| C | Craft Cooked Meat (1× Raw Meat) |
-| G | Craft Golden Apple (1× Apple + 1× Gold) → **WIN** |
-| F5 | Save |
-| F9 | Load |
-| Escape | Quit |
+| Key / Button                 | Action                                         |
+|----------------------------|-----------------------------------------------|
+| A / D                      | Move left / right                              |
+| Space                      | Jump                                           |
+| Left Click (hold)          | Mine block                                     |
+| Right Click                | Place selected block or placeable item         |
+| 1 – 9                      | Select hotbar slot                             |
+| E                          | Eat selected food                              |
+| F                          | Attack nearby enemy or animal                  |
+| Z                          | Sleep when near a Bed at night                 |
+| Tab                        | Open / close crafting menu                     |
+| Mouse Click (Crafting UI)  | Select recipe / press **CRAFT**                |
+| Mouse Wheel                | Scroll crafting recipes                        |
+| F5                         | Save                                           |
+| F9                         | Load                                           |
+| Escape                     | Close menu or quit                             |
 
+---
+
+## Objective
+
+Survive long enough to craft and eat a **Golden Apple**.
+
+- Recipe: **1 Apple + 1 Gold**
+- Apples drop from trees/leaves
+- Gold is mined from the world
+- Eat the Golden Apple (`E`) to win
+
+---
+
+## Core Gameplay Features
+
+The player must manage three survival stats:
+
+- **Health** — decreases from damage or starvation  
+- **Hunger** — drains over time (faster when moving)  
+- **Sleep** — drains over time (faster at night)  
+
+Gameplay systems:
+
+- Mining and placing blocks
+- Hunting animals for food
+- Fighting zombies
+- Crafting items using the crafting menu
+- Using structures (Crafting Table, Campfire, Bed)
+- Day/Night cycle
+- Save and load system
+- Death and win screens
+
+---
 
 ## How to Build
 
-Open `Project1.sln` in Visual Studio 2022 and press run.
+Open `Project1.sln` in **Visual Studio 2022** and run.
 
-Requires SFML (it is already configured in the project).
+Requirements:
+- SFML (already configured)
 
 ---
 
 ## Acceptance Tests
 
-## 0.1 — Hunting
+---
 
-User Story:As a player, I want to hunt an animal and store its meat so I can eat it when hungry.
+### 0.1 — Hunting
 
-1. A pig is visible on screen, player moves within attack range, pig can be targeted.
-2. Player is within range of a living pig, player presses `F`, pig takes damage, HP bar drops.
-3. Pig's HP reaches 0, final hit lands, pig dies and `RawMeat` is added to inventory.
-4. `RawMeat` is in inventory, player selects it and presses `E`, hunger increases, quantity drops by 1.
-5. `RawMeat` is in inventory, player presses `C`, `RawMeat` is consumed, `CookedMeat` appears.
-6. `CookedMeat` is in inventory, player selects it and presses `E`, hunger and HP restored, quantity drops by 1.
+**User Story:** As a player, I want to hunt animals for food.
 
-Pass: Meat appears in inventory after kill and eating increases hunger.  
-Fail: Meat doesn't appear, or eating has no effect.
+1. A pig is visible, player moves within range.
+2. Player presses **F**, pig takes damage.
+3. Pig HP reaches 0 → dies → `RawMeat` added to inventory.
+4. Player tries to eat `RawMeat` → action is rejected.
+5. Player crafts `CookedMeat` near a **Campfire**.
+6. Player eats `CookedMeat` → hunger and HP increase.
+
+**Pass:** Meat drops correctly, raw meat cannot be eaten, cooked meat works.  
+**Fail:** No drops, or food system behaves incorrectly.
 
 ---
 
-## 0.2 — Moving forward and backwards
+### 0.2 — Movement
 
-User Story: As a player, I want to move left and right to reach animals and blocks.
+**User Story:** As a player, I want to move around the world.
 
-1. Player is alive and awake, user holds `A`, player moves left.
-2. Player is alive and awake, user holds `D`, player moves right.
-3. Player is exhausted (sleep empty), user holds `A` or `D`, player moves at half speed.
+1. Hold **A** → move left  
+2. Hold **D** → move right  
+3. Sleep is 0 → movement speed is reduced  
 
-Pass: Player moves in the correct direction.  
-Fail: Player doesn't move, or moves the wrong way.
-
----
-
-## 0.3 — Jumping
-
-User Story:As a player, I want to jump to get on top of blocks.
-
-1. Player is on the ground, user presses `Space`, player jumps up.
-2. A block one level above is in front, user jumps then moves forward, player lands on top of the block.
-3. Player is already in the air, user presses `Space` again, nothing happens (no double jump).
-
-Pass: Player can clear one block height.  
-Fail: Player doesn't leave the ground, or can double-jump.
+**Pass:** Movement direction and speed behave correctly  
+**Fail:** No movement or incorrect behavior  
 
 ---
 
-## 0.4 — Item placement
+### 0.3 — Jumping
 
-**User Story:** As a player, I want to place items from my inventory into the world.
+**User Story:** As a player, I want to jump onto terrain.
 
-1. Player has a block in inventory, player right-clicks an empty tile within reach, block appears in the world.
-2. Block was placed successfully, placement completes, inventory quantity drops by 1.
-3. Target tile is already occupied, player right-clicks it, block is not placed, inventory unchanged.
-4. Target tile is out of reach, player right-clicks it, "Too far to reach!" shown, inventory unchanged.
+1. Press **Space** → player jumps  
+2. Player can reach one-block height  
+3. No double jump allowed  
+4. Short "coyote-time" jump works after leaving ground  
 
-Pass: Block appears in world and inventory count decreases.  
-Fail: Block doesn't appear, or count doesn't decrease.
-
----
-
-## 0.5 — Item pickup
-
-User Story: As a player, I want to pick up items so I can store them for later.
-
-1. An item is at the player's location, player picks it up, item is added to inventory.
-2. Item was picked up, pick-up succeeds, item is removed from the world.
-3. Inventory is full, player tries to pick up an item, item stays in the world.
-
-Pass: Item appears in inventory and is removed from the world.  
-Fail: Item doesn't appear in inventory, or stays in the world after pickup.
+**Pass:** Jump behaves naturally  
+**Fail:** Infinite jump or broken physics  
 
 ---
 
-## 0.6 — Being attacked by zombies
+### 0.4 — Item Placement
 
-User Story: As a player, if a zombie hits me, my health should go down.
+**User Story:** As a player, I want to place items in the world.
 
-1. A zombie is near the player, zombie reaches and attacks the player, player HP drops by 10.
-2. HP has decreased, player checks health bar, bar visually reflects the lower HP.
-3. Zombie keeps attacking, multiple hits land, HP keeps dropping each hit.
-4. Player HP reaches 0, final hit lands, game ends.
+1. Right-click empty tile → item placed  
+2. Inventory decreases by 1  
+3. Occupied tile → placement fails  
+4. Out of range → placement fails  
 
-Pass: HP bar decreases each time a zombie hits.  
-Fail: HP doesn't change after being hit.
-
----
-
-## 0.7 — Attack
-User Story: As a player, I want to attack enemies and animals to get resources.
-
-1. Target is within attack range, player presses `F`, target takes 10 damage.
-2. Target is out of range, player presses `F`, no damage, "No target in range." shown.
-3. Animal HP reaches 0, kill lands, animal drops `RawMeat` into inventory.
-4. Zombie HP reaches 0, kill lands, zombie is removed from the world.
-
-Pass: Target takes damage when in range, drops appear on kill.  
-Fail: No damage dealt when in range, or no drops on kill.
+**Pass:** Placement works and updates inventory  
+**Fail:** Incorrect placement or inventory bug  
 
 ---
 
-# 0.8 — Fullness decreasing
+### 0.5 — Item Pickup
 
-User Story: As a player, if my hunger hits zero, my health should start dropping.
+**User Story:** As a player, I want to collect resources.
 
-1. Hunger is at zero, time passes, HP decreases, log shows "[HUNGER] Starving!".
-2. HP is dropping from starvation, player eats food, HP stops dropping, hunger increases.
-3. HP reaches 0 from starvation, final damage tick, game ends, log shows "[DEAD] You starved to death!".
+1. Mining or killing drops items  
+2. Items are added to inventory  
+3. If inventory is full → item is not added  
 
-Pass: HP drops when hunger is zero, and eating stops it.  
-Fail: HP doesn't drop at zero hunger, or eating doesn't stop the loss.
+**Pass:** Items are stored correctly  
+**Fail:** Items disappear or overflow  
+
+---
+
+### 0.6 — Zombie Attacks
+
+**User Story:** As a player, I take damage from enemies.
+
+1. Zombie reaches player → attack  
+2. HP decreases  
+3. HP bar updates  
+4. HP = 0 → death screen  
+
+**Pass:** Damage applies correctly  
+**Fail:** No damage or no death trigger  
+
+---
+
+### 0.7 — Combat
+
+**User Story:** As a player, I want to attack enemies.
+
+1. Press **F** in range → target takes damage  
+2. Out of range → no damage  
+3. Animal dies → drops meat  
+4. Zombie dies → removed  
+
+**Pass:** Combat works correctly  
+**Fail:** No damage or incorrect drops  
+
+---
+
+### 0.8 — Hunger System
+
+**User Story:** As a player, I lose health when starving.
+
+1. Hunger = 0 → HP decreases  
+2. Eat food → hunger increases  
+3. Starvation stops after eating  
+4. HP = 0 → death  
+
+**Pass:** Starvation works correctly  
+**Fail:** No HP loss or no recovery  
+
+---
+
+### 0.9 — Sleep System
+
+**User Story:** As a player, I want to restore energy.
+
+1. Near Bed at night → press **Z** → sleep restores  
+2. Daytime → sleep fails  
+3. Not near Bed → sleep fails  
+4. Sleep = 0 → slower movement  
+
+**Pass:** Sleep works with correct conditions  
+**Fail:** Sleep works incorrectly or has no effect  
+
+---
+
+### 0.10 — Crafting System
+
+**User Story:** As a player, I want to craft items.
+
+1. Press **Tab** → open crafting menu  
+2. Select recipe → click **CRAFT**  
+3. Correct ingredients → item created  
+4. Missing station → crafting fails  
+5. Near required station → crafting succeeds  
+
+**Pass:** Crafting respects requirements  
+**Fail:** Crafting ignores rules or UI breaks  
+
+---
+
+### 0.11 — Win Condition
+
+**User Story:** As a player, I want to win the game.
+
+1. Collect Apple + Gold  
+2. Craft **Golden Apple**  
+3. Eat Golden Apple  
+4. Win screen appears  
+
+**Pass:** Game ends with victory  
+**Fail:** No win trigger  
+
+---
+
+### 0.12 — Save & Load
+
+**User Story:** As a player, I want to save progress.
+
+1. Press **F5** → game saves  
+2. Change player state  
+3. Press **F9** → state restored  
+
+**Pass:** Player data restores correctly  
+**Fail:** Missing or incorrect data after load  
+
+---
