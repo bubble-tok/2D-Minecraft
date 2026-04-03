@@ -96,7 +96,7 @@ public:
      *
      * @return The function returns a reference to the internal recipe vector.
      */
-    const std::vector<Recipe>& getRecipes() const { return recipes; }
+    const std::vector<Recipe>& getRecipes() const;
 
     /**
      * @brief The getRecipeNames function returns a vector containing the names of all recipe outputs.

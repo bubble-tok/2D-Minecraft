@@ -175,6 +175,7 @@ void World::trySpawnZombie(float playerX) {
 
 std::string World::getBlock(int row, int col) const {
     if (row<0||row>=WORLD_ROWS||col<0||col>=WORLD_COLS) return "";
+    if (row>=(int)blockMap.size()||col>=(int)blockMap[row].size()) return "";
     return blockMap[row][col];
 }
 
@@ -330,3 +331,32 @@ std::vector<std::shared_ptr<Animal>>& World::getAnimals() { return animals; }
 std::vector<std::shared_ptr<Zombie>>& World::getZombies() { return zombies; }
 const std::vector<std::shared_ptr<Animal>>& World::getAnimals() const { return animals; }
 const std::vector<std::shared_ptr<Zombie>>& World::getZombies() const { return zombies; }
+
+bool World::wasHitByZombie() const { return zombieHitThisFrame; }
+int  World::getTileSize()    const { return TILE_SIZE; }
+int  World::getGroundRow()   const { return GROUND_ROW; }
+int  World::getCols()        const { return WORLD_COLS; }
+int  World::getRows()        const { return WORLD_ROWS; }
+
+void World::setBlockMap(const std::vector<std::vector<std::string>>& bm) {
+    blockMap = bm;
+    durabilityMap.clear();
+}
+
+void World::clearEntitiesForLoad() {
+    animals.clear();
+    zombies.clear();
+}
+
+void World::addAnimalForLoad(float x, float y, int hp,
+                              const std::string& meatType, int meatAmount) {
+    auto a = std::make_shared<Animal>(x, y, meatType, meatAmount, 20);
+    a->setHp(hp);
+    animals.push_back(a);
+}
+
+void World::addZombieForLoad(float x, float y, int hp) {
+    auto z = std::make_shared<Zombie>(x, y);
+    z->setHp(hp);
+    zombies.push_back(z);
+}

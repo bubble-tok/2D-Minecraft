@@ -120,7 +120,7 @@ public:
      * @brief Returns the total slot capacity.
      * @return Always MAX_SLOTS (36).
      */
-    int  getMaxSlots() const { return MAX_SLOTS; }
+    int  getMaxSlots() const;
 
     /// Prints the inventory contents to stdout for debugging.
     void print() const;

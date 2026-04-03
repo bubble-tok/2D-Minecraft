@@ -47,10 +47,10 @@ public:
     void update(float deltaTime) override;
 
     /** @brief Returns the damage dealt per hit. */
-    int   getAttackDamage() const { return attackDamage; }
+    int   getAttackDamage() const;
 
     /** @brief Returns the maximum attack range in pixels. */
-    float getAttackRange()  const { return attackRange; }
+    float getAttackRange()  const;
 
 protected:
     int   attackDamage;    ///< Damage dealt per successful hit.

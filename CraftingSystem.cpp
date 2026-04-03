@@ -145,6 +145,8 @@ bool CraftingSystem::craft(const std::string& itemName, Inventory& inventory,
  *
  * @return The function returns a vector containing the names of all recipes.
  */
+const std::vector<Recipe>& CraftingSystem::getRecipes() const { return recipes; }
+
 std::vector<std::string> CraftingSystem::getRecipeNames() const {
     std::vector<std::string> names;
     for (auto& r : recipes) names.push_back(r.outputName);

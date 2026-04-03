@@ -37,7 +37,7 @@ public:
     void spawnZombie(std::shared_ptr<Zombie> z);
     void removeDeadEntities();
     void update(float dt, Entity& player);
-    bool wasHitByZombie() const { return zombieHitThisFrame; }
+    bool wasHitByZombie() const;
 
     // Terrain helpers
     int surfaceRowAt(int col) const;
@@ -49,10 +49,17 @@ public:
     const std::vector<std::shared_ptr<Animal>>& getAnimals() const;
     const std::vector<std::shared_ptr<Zombie>>& getZombies() const;
 
-    int getTileSize()  const { return TILE_SIZE; }
-    int getGroundRow() const { return GROUND_ROW; }
-    int getCols()      const { return WORLD_COLS; }
-    int getRows()      const { return WORLD_ROWS; }
+    int getTileSize()  const;
+    int getGroundRow() const;
+    int getCols()      const;
+    int getRows()      const;
+
+    // Save/load helpers
+    void setBlockMap(const std::vector<std::vector<std::string>>& bm);
+    void clearEntitiesForLoad();
+    void addAnimalForLoad(float x, float y, int hp,
+                          const std::string& meatType, int meatAmount);
+    void addZombieForLoad(float x, float y, int hp);
 
 private:
     std::vector<std::vector<std::string>> blockMap;

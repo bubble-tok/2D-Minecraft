@@ -12,6 +12,8 @@
 
 Player::Player(float x, float y) : Entity(x, y, 100) {}
 
+void Player::update(float /*dt*/) {}
+
 bool Player::attack(Entity& target, int totalDamage) {
     float dx   = target.getX() - this->x;
     float dy   = target.getY() - this->y;

@@ -86,13 +86,15 @@ public:
      * @brief Returns the normalised day progress in [0, 1).
      * @return Current position within the day cycle.
      */
-    float       getDayTime()   const { return dayTime;}
+    float       getDayTime()   const;
 
     /**
      * @brief Returns the total number of days elapsed since game start.
      * @return Day count starting at 1.
      */
-    int         getDayCount()  const { return dayCount; }
+    int         getDayCount()  const;
+    void        setDayTime(float t);
+    void        setDayCount(int c);
 
     /**
      * @brief Returns the human-readable name of the current phase.

@@ -117,3 +117,5 @@ std::vector<std::string> Inventory::serialize() const {
 const std::vector<std::shared_ptr<Item>>& Inventory::getSlots() const {
     return slots;
 }
+
+int Inventory::getMaxSlots() const { return MAX_SLOTS; }

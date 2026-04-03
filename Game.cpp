@@ -274,7 +274,7 @@ void Game::handleEat() {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 void Game::update(float dt) {
-    //pendingEvents.clear();
+    pendingEvents.clear();
 
     // Track day changes for NewDay event
     int prevDay = dayCycle.getDayCount();
@@ -392,3 +392,27 @@ void Game::requestCraft(const std::string& itemName) {
 
 void Game::saveGame() { SaveManager::save(*this); emit(Event::Saved); }
 void Game::loadGame() { SaveManager::load(*this); emit(Event::Loaded); }
+
+// ── Accessors ─────────────────────────────────────────────────────────────────
+
+const std::vector<Game::EventData>& Game::getEvents()    const { return pendingEvents; }
+Player&         Game::getPlayer()           { return player; }
+World&          Game::getWorld()            { return world; }
+InputHandler&   Game::getInput()            { return input; }
+CraftingSystem& Game::getCrafting()         { return craftingSystem; }
+const DayCycle& Game::getDayCycle()  const  { return dayCycle; }
+DayCycle&       Game::getDayCycle()         { return dayCycle; }
+float           Game::getShakeTimer() const { return shakeTimer; }
+const MineState& Game::getMineState() const { return mine; }
+
+// ── Save/load state accessors ─────────────────────────────────────────────────
+
+float Game::getHungerTimer()    const { return hungerTimer; }
+float Game::getSleepTimer()     const { return sleepTimer; }
+float Game::getPlayerVY()       const { return vy; }
+bool  Game::getPlayerOnGround() const { return onGround; }
+
+void  Game::setHungerTimer(float t) { hungerTimer = t; }
+void  Game::setSleepTimer(float t)  { sleepTimer  = t; }
+void  Game::setPlayerVY(float v)    { vy = v; }
+void  Game::setPlayerOnGround(bool g) { onGround = g; }

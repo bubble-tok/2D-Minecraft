@@ -46,7 +46,7 @@ public:
      *
      * @param deltaTime The deltaTime parameter represents the elapsed time since the previous frame.
      */
-    void update(float deltaTime) override {}
+    void update(float deltaTime) override;
 
     /**
      * @brief The tick function advances the wandering physics of the Animal object by one frame.
@@ -71,14 +71,14 @@ public:
      *
      * @return The function returns the meat type as a string.
      */
-    std::string getMeatType() const { return meatType; }
+    std::string getMeatType() const;
 
     /**
      * @brief The getMeatAmount function returns the quantity of meat dropped when the Animal object dies.
      *
      * @return The function returns the number of meat items dropped.
      */
-    int getMeatAmount() const { return meatAmount; }
+    int getMeatAmount() const;
 
 private:
     std::string meatType;    ///< The meatType variable stores the Food name for the drop (for example, "RawMeat").

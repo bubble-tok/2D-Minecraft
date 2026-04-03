@@ -34,7 +34,7 @@ public:
     Player(float x = 0.f, float y = 0.f);
 
     /// Physics are handled by Game::tickPhysics(); this override is a no-op.
-    void update(float) override {}
+    void update(float) override;
 
     /**
      * @brief Attacks a target entity if it is within attack range.

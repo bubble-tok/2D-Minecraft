@@ -32,9 +32,11 @@ bool Monster::attack(Entity& target) {
 }
 
 void Monster::update(float dt) {
-    // Tick down the attack cooldown each frame
     if (attackTimer > 0.f) attackTimer -= dt;
 }
+
+int   Monster::getAttackDamage() const { return attackDamage; }
+float Monster::getAttackRange()  const { return attackRange; }
 
 // ── Zombie ────────────────────────────────────────────────────────────────────
 

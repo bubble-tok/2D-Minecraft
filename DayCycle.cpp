@@ -31,6 +31,12 @@ TimeOfDay DayCycle::getPhase() const {
 bool DayCycle::isNight()   const { return dayTime >= NIGHT_START; }
 bool DayCycle::isMorning() const { return dayTime < NOON_START; }
 
+float DayCycle::getDayTime()  const { return dayTime; }
+int   DayCycle::getDayCount() const { return dayCount; }
+
+void DayCycle::setDayTime(float t) { dayTime  = t; }
+void DayCycle::setDayCount(int c)  { dayCount = c; }
+
 std::string DayCycle::getPhaseName() const {
     switch (getPhase()) {
         case TimeOfDay::Morning: return "Morning";

@@ -80,10 +80,11 @@ void Animal::tick(float dt, const TileMap& map) {
  * @return The function returns a shared pointer to the Food object created as a drop
  */
 std::shared_ptr<Food> Animal::dropMeat() const {
-    // The function returns cooked meat if the Animal object is configured to drop cooked meat
     if (meatType == "CookedMeat")
         return std::make_shared<Food>(FoodItems::CookedMeat(meatAmount));
-
-    // The function returns raw meat otherwise
     return std::make_shared<Food>(FoodItems::RawMeat(meatAmount));
 }
+
+void        Animal::update(float /*deltaTime*/) {}
+std::string Animal::getMeatType()   const { return meatType; }
+int         Animal::getMeatAmount() const { return meatAmount; }
