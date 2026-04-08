@@ -622,21 +622,21 @@ bool showLandingPage(sf::RenderWindow& window) {
             sf::Color(100, 200, 255),
             {
                 "[A] / [D]  Move left / right",
-                "[Space]    Jump  (coyote time — jump just after leaving a ledge)",
+                "[Space]    Jump",
                 "[F]        Attack nearby animals or zombies",
                 "[LClick]   Mine a block (hold to break it)",
                 "[RClick]   Place selected item from hotbar",
-                "[1-9]      Select hotbar slot",
+                "[1-9]      Select tool bar slot",
             }
         },
         {
             "SURVIVAL",
             sf::Color(230, 130, 30),
             {
-                "Hunger drains over time — faster while moving. Eat food to restore it.",
-                "Sleep drains too — twice as fast at Night. Sleep in a Bed to restore it.",
+                "Hunger drains over time, faster while moving. Eat food to restore it.",
+                "Sleep drains too, twice as fast at Night. Sleep in a Bed to restore it.",
                 "If Hunger hits 0, you start losing HP. Reach 0 HP and you die.",
-                "[E]  Eat selected food item   |   [Z]  Sleep (Night + near a Bed only)",
+                "[E]  Eat selected food item   &   [Z]  Sleep (Night + near a Bed only)",
             }
         },
         {
@@ -646,7 +646,7 @@ bool showLandingPage(sf::RenderWindow& window) {
                 "Morning -> Noon -> Evening -> Night  (sky & lighting change in real time)",
                 "Zombies spawn faster the further right you explore.",
                 "Sleep at Night near a Bed to skip to Morning and restore your Sleep bar.",
-                "You CANNOT sleep during the day — wait for Night.",
+                "You CANNOT sleep during the day, wait for Night.",
             }
         },
         {
@@ -671,8 +671,8 @@ bool showLandingPage(sf::RenderWindow& window) {
                 "Trees drop Apples when chopped (30% chance per trunk tile).",
                 "Leaves also have a 20% apple drop chance.",
                 "Gold veins are deeper and more common toward the right side of the map.",
-                "A pickaxe makes mining significantly faster — craft one early.",
-                "Zombies at night are more dangerous — try to have a sword ready.",
+                "A pickaxe makes mining significantly faster, craft one early.",
+                "Zombies at night are more dangerous, try to have a sword ready.",
                 "[F5] Save game   [F9] Load game",
             }
         },
@@ -752,7 +752,7 @@ bool showLandingPage(sf::RenderWindow& window) {
         titleText.setPosition(WIN_W/2.f, 12.f);
 
         subtitleText.setFont(font);
-        subtitleText.setString("A 2D survival crafting game — How to Play");
+        subtitleText.setString("A 2D survival crafting game & How to Play");
         subtitleText.setCharacterSize(14);
         subtitleText.setFillColor(sf::Color(160, 160, 160));
         auto sb = subtitleText.getLocalBounds();
