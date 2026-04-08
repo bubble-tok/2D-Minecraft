@@ -69,7 +69,7 @@ private:
 
     float spawnTimer         = 0.f;
     float spawnInterval      = 8.f;
-    int   maxZombies         = 12;
+    int   maxZombies         = 5;
     bool  zombieHitThisFrame = false;
 
     void placeTree(int col, int height, const std::vector<int>& groundY);
