@@ -3,7 +3,11 @@
 A 2D Minecraft-style survival game built in C++ with [SFML](https://www.sfml-dev.org/).
 Explore, mine blocks, gather resources, hunt animals, fight zombies, craft items, and eat a Golden Apple to win.
 
-![Gameplay](screenshots/gameplay.png)
+## Screenshots
+
+| Title | Gameplay | Crafting |
+|---|---|---|
+| ![Title screen](screenshots/title.png) | ![Gameplay](screenshots/gameplay.png) | ![Crafting menu](screenshots/crafting.png) |
 
 ## Objective
 
