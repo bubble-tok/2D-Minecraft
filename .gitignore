@@ -1,0 +1,17 @@
+# Build output
+x64/
+x86/
+Debug/
+Release/
+Project1/
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.log
+
+# Generated documentation
+docs/
+
+# Runtime save data
+savegame.txt
